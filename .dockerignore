@@ -1,0 +1,12 @@
+*
+
+!.git/
+!.gen/
+!*.go
+!cmd/
+!go.*
+!internal/
+!pkg/
+!static/
+!Makefile
+**/pkged.go
