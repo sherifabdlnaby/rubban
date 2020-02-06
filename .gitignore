@@ -1,6 +1,8 @@
 ### General
 bin
 vendor
+.env
+bosun.yml
 
 ### JetBrains template
 # User-specific stuff

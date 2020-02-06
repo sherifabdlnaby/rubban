@@ -1,7 +1,16 @@
 module github.com/sherifabdlnaby/bosun
 
+go 1.13
+
+replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f56771b8 => github.com/census-instrumentation/opencensus-proto v0.0.3-0.20181214143942-ba49f56771b8
+
 require (
-	github.com/sirupsen/logrus v1.4.1
-	github.com/spf13/cobra v0.0.3
+	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/go-playground/validator v9.31.0+incompatible
+	github.com/joho/godotenv v1.3.0
+	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/sirupsen/logrus v1.4.2
+	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
+	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
 )
