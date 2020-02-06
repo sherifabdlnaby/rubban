@@ -9,7 +9,7 @@ type Config struct {
 
 type Kibana struct {
 	Host     string `validate:"required"`
-	User     string `validate:"required_with=Password"`
+	User     string `validate:"required_with=password"`
 	Password string `validate:"required_with=User"`
 }
 

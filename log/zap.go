@@ -37,6 +37,7 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 	switch config.Format {
 	case "console":
 		zapConfig.Encoding = "console"
+		zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 	case "json":
 		zapConfig.Encoding = "json"
 	case "logfmt":

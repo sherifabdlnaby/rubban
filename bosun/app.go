@@ -1,6 +1,8 @@
 package bosun
 
 import (
+	"time"
+
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	config "github.com/sherifabdlnaby/bosun/config"
 	"github.com/sherifabdlnaby/bosun/log"
@@ -14,12 +16,21 @@ type App struct {
 func Run() {
 	app := Initialize()
 
-	KibanaClient, err := kibana.NewKibanaClient(app.Config.Kibana)
+	client, err := kibana.NewKibanaClient(app.Config.Kibana, app.Logger.Extend("client"))
 	if err != nil {
 		panic(err)
 	}
 
-	KibanaClient.Indices(".moni*")
+	if !client.Validate(5, 10*time.Second) {
+		app.Logger.Panicf("couldn't validate connection to Kibana")
+	}
+
+	ver, err := client.GuessVersion()
+	if err != nil {
+		panic(err)
+	}
+	app.Logger.Infof("Determined Kibana Version: %s", ver.String())
+
 }
 
 func Initialize() App {
