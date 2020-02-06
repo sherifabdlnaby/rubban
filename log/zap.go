@@ -1,0 +1,147 @@
+package log
+
+import (
+	"github.com/sherifabdlnaby/bosun/config"
+	zaplogfmt "github.com/sykesm/zap-logfmt"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
+)
+
+type zapLogger struct {
+	l *zap.SugaredLogger
+}
+
+func NewZapLoggerImpl(config config.Logging) Logger {
+
+	// Base Config
+	zapConfig := zap.NewProductionConfig()
+	if config.Debug {
+		zapConfig = zap.NewDevelopmentConfig()
+	}
+
+	// Level
+	switch config.Level {
+	case "debug":
+		zapConfig.Level.SetLevel(zap.DebugLevel)
+	case "info":
+		zapConfig.Level.SetLevel(zap.InfoLevel)
+	case "warn":
+		zapConfig.Level.SetLevel(zap.WarnLevel)
+	case "fatal":
+		zapConfig.Level.SetLevel(zap.FatalLevel)
+	case "panic":
+		zapConfig.Level.SetLevel(zap.PanicLevel)
+	}
+
+	// Format
+	switch config.Format {
+	case "console":
+		zapConfig.Encoding = "console"
+	case "json":
+		zapConfig.Encoding = "json"
+	case "logfmt":
+		err := zap.RegisterEncoder("logfmt", func(encoderConfig zapcore.EncoderConfig) (encoder zapcore.Encoder, err error) {
+			return zaplogfmt.NewEncoder(encoderConfig), nil
+		})
+		if err != nil {
+			panic(err)
+		}
+		zapConfig.Encoding = "logfmt"
+	}
+
+	// Color
+	if config.Color && (config.Format == "console" || config.Format == "logfmt") {
+		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
+	}
+
+	logger, err := zapConfig.Build()
+	if err != nil {
+		panic(err)
+	}
+
+	return &zapLogger{l: logger.Sugar()}
+}
+
+func (z *zapLogger) Extend(name string) Logger {
+	return &zapLogger{l: z.l.Named(name)}
+}
+
+func (z *zapLogger) Debug(args ...interface{}) {
+	z.l.Debug(args)
+}
+
+func (z *zapLogger) Debugf(template string, args ...interface{}) {
+	z.l.Debugf(template, args)
+}
+
+func (z *zapLogger) Debugw(msg string, keysAndValues ...interface{}) {
+	z.l.Debugw(msg, keysAndValues)
+}
+
+func (z *zapLogger) Info(args ...interface{}) {
+	z.l.Info(args)
+}
+
+func (z *zapLogger) Infof(template string, args ...interface{}) {
+	z.l.Infof(template, args)
+}
+
+func (z *zapLogger) Infow(msg string, keysAndValues ...interface{}) {
+	z.l.Infow(msg, keysAndValues)
+}
+
+func (z *zapLogger) Warn(args ...interface{}) {
+	z.l.Warn(args)
+}
+
+func (z *zapLogger) Warnf(template string, args ...interface{}) {
+	z.l.Warnf(template, args)
+}
+
+func (z *zapLogger) Warnw(msg string, keysAndValues ...interface{}) {
+	z.l.Warnw(msg, keysAndValues)
+}
+
+func (z *zapLogger) Error(args ...interface{}) {
+	z.l.Error(args)
+}
+
+func (z *zapLogger) Errorf(template string, args ...interface{}) {
+	z.l.Errorf(template, args)
+}
+
+func (z *zapLogger) Errorw(msg string, keysAndValues ...interface{}) {
+	z.l.Errorw(msg, keysAndValues)
+}
+
+func (z *zapLogger) Fatal(args ...interface{}) {
+	z.l.Fatal(args)
+}
+
+func (z *zapLogger) Fatalf(template string, args ...interface{}) {
+	z.l.Fatalf(template, args)
+}
+
+func (z *zapLogger) Fatalw(msg string, keysAndValues ...interface{}) {
+	z.l.Fatalw(msg, keysAndValues)
+}
+
+func (z *zapLogger) Panic(args ...interface{}) {
+	z.l.Panic(args)
+}
+
+func (z *zapLogger) Panicf(template string, args ...interface{}) {
+	z.l.Panicf(template, args)
+}
+
+func (z *zapLogger) Panicw(msg string, keysAndValues ...interface{}) {
+	z.l.Panicw(msg, keysAndValues)
+}
+
+func (z *zapLogger) Sync() error {
+	return z.l.Sync()
+}
+
+func (z *zapLogger) WithFields(args ...interface{}) Logger {
+	return &zapLogger{l: z.l.With(args)}
+}

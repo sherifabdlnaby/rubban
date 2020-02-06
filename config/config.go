@@ -14,3 +14,10 @@ type Kibana struct {
 type IndexPatternDiscover struct {
 	IndicesPatterns []string
 }
+
+type Logging struct {
+	Level  string `validate:"required, oneof=debug info warn fatal panic"`
+	Format string `validate:"required, oneof=console json logfmt"`
+	Debug  bool
+	Color  bool
+}
