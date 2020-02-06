@@ -1,5 +1,7 @@
 package config
 
+// TODO Default Config for EVERYTHING
+
 type Config struct {
 	Kibana  Kibana  `validate:"required"`
 	Logging Logging `validate:"required"`
@@ -7,7 +9,6 @@ type Config struct {
 
 type Kibana struct {
 	Host     string `validate:"required"`
-	Port     int    `validate:"required"`
 	User     string `validate:"required_with=Password"`
 	Password string `validate:"required_with=User"`
 }

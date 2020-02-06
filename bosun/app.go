@@ -1,8 +1,7 @@
 package bosun
 
 import (
-	"fmt"
-
+	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	config "github.com/sherifabdlnaby/bosun/config"
 	"github.com/sherifabdlnaby/bosun/log"
 )
@@ -14,6 +13,13 @@ type App struct {
 
 func Run() {
 	app := Initialize()
+
+	KibanaClient, err := kibana.NewKibanaClient(app.Config.Kibana)
+	if err != nil {
+		panic(err)
+	}
+
+	KibanaClient.Indices(".moni*")
 }
 
 func Initialize() App {
