@@ -55,7 +55,7 @@ func Load(configName string) (*Config, error) {
 	validate := validator.New()
 	err = validate.Struct(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("errors validating struct config: %w", err)
+		return nil, fmt.Errorf("errors validating struct config: %s", err.Error())
 	}
 
 	errList := customValidate(&cfg)

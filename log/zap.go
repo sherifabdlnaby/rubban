@@ -11,7 +11,7 @@ type zapLogger struct {
 	l *zap.SugaredLogger
 }
 
-func NewZapLoggerImpl(config config.Logging) Logger {
+func NewZapLoggerImpl(name string, config config.Logging) Logger {
 
 	// Base Config
 	zapConfig := zap.NewProductionConfig()
@@ -54,12 +54,12 @@ func NewZapLoggerImpl(config config.Logging) Logger {
 		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
-	logger, err := zapConfig.Build()
+	logger, err := zapConfig.Build(zap.AddCaller(), zap.AddCallerSkip(1))
 	if err != nil {
 		panic(err)
 	}
 
-	return &zapLogger{l: logger.Sugar()}
+	return &zapLogger{l: logger.Sugar().Named(name)}
 }
 
 func (z *zapLogger) Extend(name string) Logger {
@@ -67,75 +67,75 @@ func (z *zapLogger) Extend(name string) Logger {
 }
 
 func (z *zapLogger) Debug(args ...interface{}) {
-	z.l.Debug(args)
+	z.l.Debug(args...)
 }
 
 func (z *zapLogger) Debugf(template string, args ...interface{}) {
-	z.l.Debugf(template, args)
+	z.l.Debugf(template, args...)
 }
 
 func (z *zapLogger) Debugw(msg string, keysAndValues ...interface{}) {
-	z.l.Debugw(msg, keysAndValues)
+	z.l.Debugw(msg, keysAndValues...)
 }
 
 func (z *zapLogger) Info(args ...interface{}) {
-	z.l.Info(args)
+	z.l.Info(args...)
 }
 
 func (z *zapLogger) Infof(template string, args ...interface{}) {
-	z.l.Infof(template, args)
+	z.l.Infof(template, args...)
 }
 
 func (z *zapLogger) Infow(msg string, keysAndValues ...interface{}) {
-	z.l.Infow(msg, keysAndValues)
+	z.l.Infow(msg, keysAndValues...)
 }
 
 func (z *zapLogger) Warn(args ...interface{}) {
-	z.l.Warn(args)
+	z.l.Warn(args...)
 }
 
 func (z *zapLogger) Warnf(template string, args ...interface{}) {
-	z.l.Warnf(template, args)
+	z.l.Warnf(template, args...)
 }
 
 func (z *zapLogger) Warnw(msg string, keysAndValues ...interface{}) {
-	z.l.Warnw(msg, keysAndValues)
+	z.l.Warnw(msg, keysAndValues...)
 }
 
 func (z *zapLogger) Error(args ...interface{}) {
-	z.l.Error(args)
+	z.l.Error(args...)
 }
 
 func (z *zapLogger) Errorf(template string, args ...interface{}) {
-	z.l.Errorf(template, args)
+	z.l.Errorf(template, args...)
 }
 
 func (z *zapLogger) Errorw(msg string, keysAndValues ...interface{}) {
-	z.l.Errorw(msg, keysAndValues)
+	z.l.Errorw(msg, keysAndValues...)
 }
 
 func (z *zapLogger) Fatal(args ...interface{}) {
-	z.l.Fatal(args)
+	z.l.Fatal(args...)
 }
 
 func (z *zapLogger) Fatalf(template string, args ...interface{}) {
-	z.l.Fatalf(template, args)
+	z.l.Fatalf(template, args...)
 }
 
 func (z *zapLogger) Fatalw(msg string, keysAndValues ...interface{}) {
-	z.l.Fatalw(msg, keysAndValues)
+	z.l.Fatalw(msg, keysAndValues...)
 }
 
 func (z *zapLogger) Panic(args ...interface{}) {
-	z.l.Panic(args)
+	z.l.Panic(args...)
 }
 
 func (z *zapLogger) Panicf(template string, args ...interface{}) {
-	z.l.Panicf(template, args)
+	z.l.Panicf(template, args...)
 }
 
 func (z *zapLogger) Panicw(msg string, keysAndValues ...interface{}) {
-	z.l.Panicw(msg, keysAndValues)
+	z.l.Panicw(msg, keysAndValues...)
 }
 
 func (z *zapLogger) Sync() error {
@@ -143,5 +143,5 @@ func (z *zapLogger) Sync() error {
 }
 
 func (z *zapLogger) WithFields(args ...interface{}) Logger {
-	return &zapLogger{l: z.l.With(args)}
+	return &zapLogger{l: z.l.With(args...)}
 }

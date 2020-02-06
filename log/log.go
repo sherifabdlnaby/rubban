@@ -1,5 +1,7 @@
 package log
 
+import "github.com/sherifabdlnaby/bosun/config"
+
 // Logger defines a set of methods for writing application logs.
 type Logger interface {
 	Extend(name string) Logger
@@ -23,4 +25,13 @@ type Logger interface {
 	Warnf(template string, args ...interface{})
 	Warnw(msg string, keysAndValues ...interface{})
 	WithFields(args ...interface{}) Logger
+}
+
+func Default() Logger {
+	return NewZapLoggerImpl("root", config.Logging{
+		Level:  "info",
+		Format: "console",
+		Debug:  true,
+		Color:  false,
+	})
 }

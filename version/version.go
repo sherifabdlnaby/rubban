@@ -1,6 +1,7 @@
 package version
 
 import (
+	"bytes"
 	"fmt"
 	"runtime"
 )
@@ -19,3 +20,17 @@ var GoVersion = runtime.Version()
 
 // OsArch returns the os and arch used to build the binary
 var OsArch = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
+
+func Get() string {
+	buf := new(bytes.Buffer)
+	_, _ = fmt.Fprintln(buf, "Build Date:", BuildDate)
+	_, _ = fmt.Fprintln(buf, "Git Commit:", GitCommit)
+	_, _ = fmt.Fprintln(buf, "Version:", Version)
+	_, _ = fmt.Fprintln(buf, "Go Version:", GoVersion)
+	_, _ = fmt.Fprintln(buf, "OS / Arch:", OsArch)
+	return buf.String()
+}
+
+func Print() {
+	fmt.Println(Get())
+}
