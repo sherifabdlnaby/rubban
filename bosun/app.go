@@ -13,11 +13,12 @@ import (
 )
 
 type Bosun struct {
-	config config.Config
-	logger log.Logger
-	client *kibana.Client
-	semVer semver.Version
-	api    kibana.API
+	config           config.Config
+	logger           log.Logger
+	client           *kibana.Client
+	semVer           semver.Version
+	api              kibana.API
+	autoIndexPattern AutoIndexPattern
 }
 
 func Main() {
@@ -26,6 +27,8 @@ func Main() {
 	if err != nil {
 		panic("Failed to Initalize Bosun. Error: " + err.Error())
 	}
+
+	err = bosun.AutoIndexPattern()
 }
 
 func (b *Bosun) Initialize() error {
@@ -54,7 +57,7 @@ func (b *Bosun) Initialize() error {
 	}
 
 	// Validate Connection
-	if !b.client.Validate(5, 1*time.Second) {
+	if !b.client.Validate(5, 10*time.Second) {
 		err = fmt.Errorf("couldn't validate connection to Kibana API")
 		b.logger.Fatal("Cannot Initialize Bosun without an Initial Connection to Kibana API")
 		return err
@@ -69,6 +72,13 @@ func (b *Bosun) Initialize() error {
 		return err
 	}
 	b.logger.Infow(fmt.Sprintf("Determined Kibana Version: %s", b.semVer.String()))
+
+	// Determine API
+	// TODO for now bosun only support API V7
+	b.api = kibana.NewApiVer7(b.client)
+
+	// Init AutoIndexPattern
+	b.autoIndexPattern = *NewAutoIndexPattern(b.config.AutoIndexPattern)
 
 	return nil
 }

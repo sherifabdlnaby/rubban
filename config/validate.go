@@ -43,6 +43,7 @@ func customValidate(config Config) []error {
 	errList := make([]error, 0)
 
 	// Put Custom Validation Here
+	// TODO Validate Regex Expressions to not contain multiple ** or ## and is a valid index pattern.
 
 	return errList
 }

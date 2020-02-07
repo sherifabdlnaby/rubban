@@ -3,8 +3,9 @@ package config
 // TODO Default config for EVERYTHING
 
 type Config struct {
-	Kibana  Kibana  `validate:"required"`
-	Logging Logging `validate:"required"`
+	Kibana           Kibana           `validate:"required"`
+	Logging          Logging          `validate:"required"`
+	AutoIndexPattern AutoIndexPattern `validate:"required"`
 }
 
 type Kibana struct {
@@ -13,8 +14,14 @@ type Kibana struct {
 	Password string `validate:"required_with=User"`
 }
 
-type IndexPatternDiscover struct {
-	IndicesPatterns []string
+type GeneralPattern struct {
+	Pattern       string
+	TimeFieldName []string
+}
+
+type AutoIndexPattern struct {
+	Enabled         bool
+	GeneralPatterns []GeneralPattern
 }
 
 type Logging struct {

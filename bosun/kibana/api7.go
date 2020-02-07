@@ -103,7 +103,7 @@ func (a *ApiVer7) indexPatternPage(filter string, page int) ([]IndexPattern, int
 
 	indexPatterns := make([]IndexPattern, 0)
 	indexPatternPage := IndexPatternPage{}
-	resp, err := a.client.get(fmt.Sprintf("/api/saved_objects/_find?fields=title&fields=timeFieldName&per_page=1&search=%s&search_fields=title&type=index-pattern&page=%d", filter, page))
+	resp, err := a.client.get(fmt.Sprintf("/api/saved_objects/_find?fields=title&fields=timeFieldName&per_page=1&search=\"%s\"&search_fields=title&type=index-pattern&page=%d", filter, page))
 	if err != nil {
 		return indexPatterns, 0, err
 	}
