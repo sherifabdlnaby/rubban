@@ -50,11 +50,12 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 	}
 }
 
-func (b *Bosun) AutoIndexPattern() error {
+func (b *Bosun) AutoIndexPattern() {
 
 	//// Set for Found Patterns ( a set datastructes using Map )
 	computedIndexPatterns := make(map[string]kibana.IndexPattern)
 
+	// TODO make this concurrent
 	for _, generalPattern := range b.autoIndexPattern.GeneralPatterns {
 
 		// TODO send those two concurrently.
@@ -62,8 +63,8 @@ func (b *Bosun) AutoIndexPattern() error {
 		// Get Current IndexPattern Matching Given General Patterns
 		indexPatterns, err := b.api.IndexPatterns(generalPattern.Pattern)
 		if err != nil {
-			b.logger.Errorw("failed to get index patterns matching a general pattern. escaping this...", "generalPattern", generalPattern.Pattern)
-			return fmt.Errorf("failed to get index patterns matching general pattern %s. escaped", generalPattern.Pattern)
+			b.logger.Warnw("failed to get index patterns matching a general pattern. escaping this one...", "generalPattern", generalPattern.Pattern)
+			continue
 		}
 		patternsList := make([]string, 0)
 		for _, index := range indexPatterns {
@@ -119,9 +120,15 @@ func (b *Bosun) AutoIndexPattern() error {
 	for _, indexPattern := range computedIndexPatterns {
 		newIndexPatterns = append(newIndexPatterns, indexPattern)
 	}
-	err := b.api.BulkCreateIndexPattern(newIndexPatterns)
 
-	return err
+	err := b.api.BulkCreateIndexPattern(newIndexPatterns)
+	if err != nil {
+		b.logger.Errorw("Failed to bulk create new index patterns", "error", err.Error())
+	}
+
+	b.logger.Infow(fmt.Sprintf("Created %d Index Patterns.", len(newIndexPatterns)), "Index Patterns", newIndexPatterns)
+
+	return
 }
 
 func getMatchGroups(pattern string) []int {

@@ -100,6 +100,10 @@ func (a *ApiVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 }
 
 func (a *ApiVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
+	if len(indexPattern) == 0 {
+		return nil
+	}
+
 	// Prepare Requests
 	bulkRequest := make([]BulkIndexPattern, 0)
 	for _, pattern := range indexPattern {
@@ -124,7 +128,7 @@ func (a *ApiVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	}
 
 	_ = resp.Body.Close()
-	if !(resp.StatusCode < 200 || resp.StatusCode >= 300) {
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("failed to bulk create saved objects, error: %s", resp.Status)
 	}
 

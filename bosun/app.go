@@ -28,7 +28,7 @@ func Main() {
 		panic("Failed to Initalize Bosun. Error: " + err.Error())
 	}
 
-	err = bosun.AutoIndexPattern()
+	bosun.AutoIndexPattern()
 }
 
 func (b *Bosun) Initialize() error {
