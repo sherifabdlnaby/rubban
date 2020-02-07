@@ -99,6 +99,38 @@ func (a *ApiVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 	return aggPatterns, nil
 }
 
+func (a *ApiVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
+	// Prepare Requests
+	bulkRequest := make([]BulkIndexPattern, 0)
+	for _, pattern := range indexPattern {
+		bulkRequest = append(bulkRequest, BulkIndexPattern{
+			Type: "index-pattern",
+			Attributes: BulkIndexPatterAttributes{
+				Title:         pattern.Title,
+				TimeFieldName: pattern.TimeFieldName,
+			},
+		})
+	}
+	// Json Marshalling
+	buff, err := json.Marshal(bulkRequest)
+	if err != nil {
+		return fmt.Errorf("failed to JSON marshalling bulk create index pattern")
+	}
+
+	// Send Request
+	resp, err := a.client.postWithJson("/api/saved_objects/_bulk_create", buff)
+	if err != nil {
+		return fmt.Errorf("failed to bulk create saved objects, error: %s", err.Error())
+	}
+
+	_ = resp.Body.Close()
+	if !(resp.StatusCode < 200 || resp.StatusCode >= 300) {
+		return fmt.Errorf("failed to bulk create saved objects, error: %s", resp.Status)
+	}
+
+	return nil
+}
+
 func (a *ApiVer7) indexPatternPage(filter string, page int) ([]IndexPattern, int, error) {
 
 	indexPatterns := make([]IndexPattern, 0)

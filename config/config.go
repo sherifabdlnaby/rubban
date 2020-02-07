@@ -16,7 +16,7 @@ type Kibana struct {
 
 type GeneralPattern struct {
 	Pattern       string
-	TimeFieldName []string
+	TimeFieldName string
 }
 
 type AutoIndexPattern struct {

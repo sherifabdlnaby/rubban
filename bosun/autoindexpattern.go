@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	"github.com/sherifabdlnaby/bosun/config"
 )
 
@@ -20,7 +21,7 @@ func replacerForRegex(s string) string {
 type GeneralPattern struct {
 	Pattern       string
 	Regex         regexp.Regexp
-	TimeFieldName []string
+	TimeFieldName string
 	MatchGroups   []int
 }
 
@@ -50,6 +51,9 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 }
 
 func (b *Bosun) AutoIndexPattern() error {
+
+	//// Set for Found Patterns ( a set datastructes using Map )
+	computedIndexPatterns := make(map[string]kibana.IndexPattern)
 
 	for _, generalPattern := range b.autoIndexPattern.GeneralPatterns {
 
@@ -82,10 +86,6 @@ func (b *Bosun) AutoIndexPattern() error {
 		}
 
 		// Build Index Pattern for every unmatched Index
-
-		//// Set for Found Patterns ( a set datastructes using Map )
-		computedIndexPatterns := make(map[string][]string)
-
 		for _, unmatchedIndex := range unmatchedIndices {
 			matchGroups := generalPattern.Regex.FindStringSubmatch(unmatchedIndex)
 			newIndexPattern := generalPattern.Pattern
@@ -104,16 +104,24 @@ func (b *Bosun) AutoIndexPattern() error {
 			newIndexPattern = strings.Replace(newIndexPattern, "#", "*", -1)
 			_, ok := computedIndexPatterns[newIndexPattern]
 			if !ok {
-				computedIndexPatterns[newIndexPattern] = generalPattern.TimeFieldName
+				computedIndexPatterns[newIndexPattern] = kibana.IndexPattern{
+					Title:         newIndexPattern,
+					TimeFieldName: generalPattern.TimeFieldName,
+				}
 			}
 		}
 
-		//// CreateIndexPatterns for
-		println(computedIndexPatterns)
-
 	}
 
-	return nil
+	// Bulk Create Index Patterns
+	/// Create List of Index Patterns
+	var newIndexPatterns []kibana.IndexPattern
+	for _, indexPattern := range computedIndexPatterns {
+		newIndexPatterns = append(newIndexPatterns, indexPattern)
+	}
+	err := b.api.BulkCreateIndexPattern(newIndexPatterns)
+
+	return err
 }
 
 func getMatchGroups(pattern string) []int {

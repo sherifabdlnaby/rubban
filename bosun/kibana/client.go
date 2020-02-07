@@ -1,6 +1,7 @@
 package kibana
 
 import (
+	"bytes"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -30,6 +31,8 @@ type API interface {
 	IndexPatternFields(filter string) ([]IndexPattern, error)
 
 	IndexPatterns(filter string) ([]IndexPattern, error)
+
+	BulkCreateIndexPattern(indexPattern []IndexPattern) error
 }
 
 func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
@@ -83,6 +86,22 @@ func (c *Client) post(uri string) (*http.Response, error) {
 		return nil, err
 	}
 	req.Header.Set("kbn-xsrf", "true")
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(c.username, c.password)
+	resp, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+func (c *Client) postWithJson(uri string, body []byte) (*http.Response, error) {
+	req, err := http.NewRequest("POST", c.getFullUrl(uri), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("kbn-xsrf", "true")
+	req.Header.Set("Content-Type", "application/json")
 	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.http.Do(req)
 	if err != nil {

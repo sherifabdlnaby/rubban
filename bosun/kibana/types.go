@@ -27,6 +27,17 @@ type IndexPattern struct {
 	Title         string `json:"title"`
 	TimeFieldName string `json:"timeFieldName"`
 }
+
+type BulkIndexPatterAttributes struct {
+	Title         string `json:"title"`
+	TimeFieldName string `json:"timeFieldName"`
+}
+
+type BulkIndexPattern struct {
+	Type       string                    `json:"type"`
+	Attributes BulkIndexPatterAttributes `json:"attributes,omitempty"`
+}
+
 type IndexPatternPage struct {
 	Page         int `json:"page"`
 	PerPage      int `json:"per_page"`
