@@ -2,11 +2,11 @@ package config
 
 import (
 	"fmt"
-	"github.com/go-playground/validator"
-	"github.com/joho/godotenv"
-	"github.com/spf13/viper"
 	"os"
 	"strings"
+
+	"github.com/joho/godotenv"
+	"github.com/spf13/viper"
 )
 
 func Load(configName string) (*Config, error) {
@@ -52,15 +52,9 @@ func Load(configName string) (*Config, error) {
 	}
 
 	// Validate
-	validate := validator.New()
-	err = validate.Struct(cfg)
+	err = validate(cfg)
 	if err != nil {
-		return nil, fmt.Errorf("errors validating struct config: %s", err.Error())
-	}
-
-	errList := customValidate(&cfg)
-	if len(errList) != 0 {
-		return nil, fmt.Errorf("errors validating struct config: %v", errList)
+		return nil, err
 	}
 
 	return &cfg, nil

@@ -15,7 +15,7 @@ type Info struct {
 	} `json:"version"`
 }
 
-func (i Info) GetSemVar() (*semver.Version, error) {
+func (i Info) GetSemVer() (*semver.Version, error) {
 	return semver.NewVersion(i.Version.Number)
 }
 

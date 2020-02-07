@@ -50,8 +50,11 @@ func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) getFullUrl(path string) string {
+	return c.baseUrl.String() + path
+}
 func (c *Client) get(uri string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", c.baseUrl.String()+uri, nil)
+	req, err := http.NewRequest("GET", c.getFullUrl(uri), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +68,7 @@ func (c *Client) get(uri string) (*http.Response, error) {
 }
 
 func (c *Client) post(uri string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", c.baseUrl.String()+uri, nil)
+	req, err := http.NewRequest("POST", c.getFullUrl(uri), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -81,20 +84,28 @@ func (c *Client) post(uri string) (*http.Response, error) {
 func (c *Client) Validate(retry int, waitTime time.Duration) bool {
 	var err error
 	var resp *http.Response
-	for i := 0; i < retry; i++ {
-		resp, err = c.get("/api/status")
+	var pingApiUrl = "/api/status"
+
+	c.logger.Infof("Testing connection to Kibana API at %s", c.getFullUrl(pingApiUrl))
+
+	for i := 0; i < retry+1; i++ {
+
+		if i != 0 {
+			c.logger.Infof("Retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i, retry)
+			time.Sleep(waitTime)
+		}
+
+		resp, err = c.get(pingApiUrl)
 		if err == nil {
 			_ = resp.Body.Close()
 			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-				c.logger.Info("successfully connected to Kibana")
+				c.logger.Infof("Successfully connected to Kibana API %s", c.getFullUrl(pingApiUrl))
 				return true
 			}
-			err = fmt.Errorf("couldn't connect to kibana: %d %s", resp.StatusCode, resp.Status)
+			err = fmt.Errorf("%s", resp.Status)
 		}
 
-		c.logger.Infow("could not connect to Kibana", "error", err.Error())
-		c.logger.Infof("retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i+1, retry)
-		time.Sleep(waitTime)
+		c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getFullUrl(pingApiUrl)), "error", err.Error())
 	}
 	return false
 }
@@ -107,13 +118,14 @@ func (c *Client) GuessVersion() (*semver.Version, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	info := Info{}
+
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+		info := Info{}
 		err := json.NewDecoder(resp.Body).Decode(&info)
 		if err != nil {
 			return nil, err
 		}
-		return info.GetSemVar()
+		return info.GetSemVer()
 	}
 
 	// 2
