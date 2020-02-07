@@ -13,7 +13,7 @@ type zapLogger struct {
 
 func NewZapLoggerImpl(name string, config config.Logging) Logger {
 
-	// Base Config
+	// Base config
 	zapConfig := zap.NewProductionConfig()
 	if config.Debug {
 		zapConfig = zap.NewDevelopmentConfig()

@@ -22,6 +22,16 @@ type Client struct {
 	logger   log.Logger
 }
 
+type API interface {
+	Info() (Info, error)
+
+	Indices(filter string) ([]Index, error)
+
+	IndexPatternFields(filter string) ([]IndexPattern, error)
+
+	IndexPatterns(filter string) ([]IndexPattern, error)
+}
+
 func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 
 	// Create Base URL
@@ -110,12 +120,12 @@ func (c *Client) Validate(retry int, waitTime time.Duration) bool {
 	return false
 }
 
-func (c *Client) GuessVersion() (*semver.Version, error) {
+func (c *Client) GuessVersion() (semver.Version, error) {
 
 	// 1
 	resp, err := c.get("/api/status")
 	if err != nil {
-		return nil, err
+		return semver.Version{}, err
 	}
 	defer resp.Body.Close()
 
@@ -123,13 +133,17 @@ func (c *Client) GuessVersion() (*semver.Version, error) {
 		info := Info{}
 		err := json.NewDecoder(resp.Body).Decode(&info)
 		if err != nil {
-			return nil, err
+			return semver.Version{}, err
 		}
-		return info.GetSemVer()
+		semVer, err := info.GetSemVer()
+		if err != nil {
+			return semver.Version{}, err
+		}
+		return *semVer, nil
 	}
 
 	// 2
 	// Will add more ways to guess version has above API was changed in other Kibana versions.
 
-	return nil, nil
+	return semver.Version{}, nil
 }

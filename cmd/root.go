@@ -15,7 +15,7 @@ var rootCmd = &cobra.Command{
 	Short: "xxx",
 	Long:  `XXXXXX`,
 	Run: func(cmd *cobra.Command, args []string) {
-		bosun.Run()
+		bosun.Main()
 	},
 }
 

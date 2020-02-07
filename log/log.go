@@ -2,7 +2,7 @@ package log
 
 import "github.com/sherifabdlnaby/bosun/config"
 
-// Log defines a set of methods for writing application logs.
+// logger defines a set of methods for writing application logs.
 type Logger interface {
 	Extend(name string) Logger
 	Debug(args ...interface{})

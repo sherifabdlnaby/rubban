@@ -3,57 +3,72 @@ package bosun
 import (
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	config "github.com/sherifabdlnaby/bosun/config"
 	"github.com/sherifabdlnaby/bosun/log"
 )
 
-type App struct {
-	Config config.Config
-	Log    log.Logger
+type Bosun struct {
+	config config.Config
+	logger log.Logger
+	client *kibana.Client
+	semVer semver.Version
+	api    kibana.API
 }
 
-func Run() {
-	app := Initialize()
-	app.Log.Info("Starting Bosun...")
-
-	client, err := kibana.NewKibanaClient(app.Config.Kibana, app.Log.Extend("client"))
+func Main() {
+	bosun := Bosun{}
+	err := bosun.Initialize()
 	if err != nil {
-		panic(err)
+		panic("Failed to Initalize Bosun. Error: " + err.Error())
 	}
-
-	if !client.Validate(5, 10*time.Second) {
-		app.Log.Fatal("Couldn't Validate Connection to Kibana API")
-		return
-	}
-	app.Log.Info("Validated Initial Connection to Kibana API")
-
-	semVer, err := client.GuessVersion()
-	if err != nil {
-		app.Log.Errorw("Couldn't Determine Kibana Version.", "error", err.Error())
-		return
-	}
-
-	app.Log.Infow(fmt.Sprintf("Determined Kibana Version: %s", semVer.String()))
-
 }
 
-func Initialize() App {
-	// Get Default Log
+func (b *Bosun) Initialize() error {
+
+	var err error
+
+	// Get Default logger
 	logger := log.Default()
 
-	// Load Config
-	Config, err := config.Load("bosun")
+	// Load config
+	b.config, err = config.Load("bosun")
 	if err != nil {
 		logger.Fatal("Failed to load configuration.", "error", err)
 		os.Exit(1)
 	}
 
-	// Init Log
-	logger = log.NewZapLoggerImpl("bosun", Config.Logging)
+	// Init logger
+	b.logger = log.NewZapLoggerImpl("bosun", b.config.Logging)
+	b.logger.Info("Starting Bosun...")
 
-	// App Struct to hold common resources
-	return App{Config: *Config, Log: logger}
+	// Init Kibana API Client
+	b.logger.Info("Initializing Kibana API Client...")
+	b.client, err = kibana.NewKibanaClient(b.config.Kibana, b.logger.Extend("client"))
+	if err != nil {
+		b.logger.Fatalw("Could not Initialize Kibana API Client", "error", err.Error())
+	}
+
+	// Validate Connection
+	if !b.client.Validate(5, 1*time.Second) {
+		err = fmt.Errorf("couldn't validate connection to Kibana API")
+		b.logger.Fatal("Cannot Initialize Bosun without an Initial Connection to Kibana API")
+		return err
+	}
+	b.logger.Info("Validated Initial Connection to Kibana API")
+
+	// Get Kibana Version (To Determine which set of APIs to use later)
+	b.semVer, err = b.client.GuessVersion()
+	if err != nil {
+		err = fmt.Errorf("couldn't determine kibana version")
+		b.logger.Fatal(strings.ToTitle(err.Error()))
+		return err
+	}
+	b.logger.Infow(fmt.Sprintf("Determined Kibana Version: %s", b.semVer.String()))
+
+	return nil
 }

@@ -1,6 +1,6 @@
 package config
 
-// TODO Default Config for EVERYTHING
+// TODO Default config for EVERYTHING
 
 type Config struct {
 	Kibana  Kibana  `validate:"required"`

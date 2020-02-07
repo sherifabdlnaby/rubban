@@ -6,6 +6,7 @@ replace github.com/census-instrumentation/opencensus-proto v0.1.0-0.201812141439
 
 require (
 	github.com/Masterminds/semver/v3 v3.0.3
+	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/go-playground/locales v0.13.0
 	github.com/go-playground/universal-translator v0.17.0
 	github.com/go-playground/validator v9.31.0+incompatible

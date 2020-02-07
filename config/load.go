@@ -9,13 +9,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-func Load(configName string) (*Config, error) {
+func Load(configName string) (Config, error) {
 	v := viper.New()
 
 	// load .env variables
 	err := godotenv.Load()
 	if err != nil {
-		return nil, fmt.Errorf("error loading .env envvars: %w", err)
+		return Config{}, fmt.Errorf("error loading .env envvars: %w", err)
 	}
 
 	// setup env configs
@@ -41,21 +41,21 @@ func Load(configName string) (*Config, error) {
 
 	err = v.ReadInConfig()
 	if err != nil {
-		return nil, fmt.Errorf("error reading config: %w", err)
+		return Config{}, fmt.Errorf("error reading config: %w", err)
 	}
 
 	// Unmarshalling
 	cfg := Config{}
 	err = v.Unmarshal(&cfg)
 	if err != nil {
-		return nil, fmt.Errorf("error unmarshalling config: %w", err)
+		return Config{}, fmt.Errorf("error unmarshalling config: %w", err)
 	}
 
 	// Validate
 	err = validate(cfg)
 	if err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
-	return &cfg, nil
+	return cfg, nil
 }
