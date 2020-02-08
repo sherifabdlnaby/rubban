@@ -1,8 +1,5 @@
 package config
 
-// TODO Default config for EVERYTHING
-// TODO Extra Validation
-
 type Config struct {
 	Kibana           Kibana           `validate:"required"`
 	Logging          Logging          `validate:"required"`
@@ -16,14 +13,14 @@ type Kibana struct {
 }
 
 type GeneralPattern struct {
-	Pattern       string
+	Pattern       string `validate:"required"`
 	TimeFieldName string
 }
 
 type AutoIndexPattern struct {
 	Enabled         bool
-	GeneralPatterns []GeneralPattern
-	Schedule        string
+	GeneralPatterns []GeneralPattern `validate:"required,min=1"`
+	Schedule        string           `validate:"required"`
 }
 
 type Logging struct {
