@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -42,7 +43,16 @@ func validate(config Config) error {
 // Custom Validators
 func customValidate(config Config) error {
 	// Put Custom Validation Here
-	// TODO Validate Regex Expressions to not contain multiple ** or ## and is a valid index pattern.
+	for _, generalPattern := range config.AutoIndexPattern.GeneralPatterns {
+		pattern := generalPattern.Pattern
+		if strings.ContainsAny(pattern, "/\\?\"<>| ,") || len(pattern) > 255 ||
+			pattern == "." || pattern == ".." || strings.HasPrefix(pattern, "-") ||
+			strings.HasPrefix(pattern, "_") || strings.HasPrefix(pattern, "+") ||
+			pattern != strings.ToLower(pattern) || strings.Contains(pattern, "**") ||
+			strings.Contains(pattern, "##") {
+			return fmt.Errorf("invalid general pattern [%s]", pattern)
+		}
+	}
 
 	// Validate cron schedules
 	_, err := cron.ParseStandard(config.AutoIndexPattern.Schedule)
