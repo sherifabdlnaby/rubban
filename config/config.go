@@ -1,6 +1,8 @@
 package config
 
 // TODO Default config for EVERYTHING
+// TODO Validate cron expr
+// TODO Extra Validation
 
 type Config struct {
 	Kibana           Kibana           `validate:"required"`
@@ -22,6 +24,7 @@ type GeneralPattern struct {
 type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
+	Schedule        string
 }
 
 type Logging struct {

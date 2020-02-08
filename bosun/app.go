@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	config "github.com/sherifabdlnaby/bosun/config"
 	"github.com/sherifabdlnaby/bosun/log"
@@ -18,6 +19,7 @@ type Bosun struct {
 	client           *kibana.Client
 	semVer           semver.Version
 	api              kibana.API
+	scheduler        *cron.Cron
 	autoIndexPattern AutoIndexPattern
 }
 
@@ -25,10 +27,13 @@ func Main() {
 	bosun := Bosun{}
 	err := bosun.Initialize()
 	if err != nil {
-		panic("Failed to Initalize Bosun. Error: " + err.Error())
+		panic("Failed to Initialize Bosun. Error: " + err.Error())
 	}
 
-	bosun.AutoIndexPattern()
+	// Register Scheduler
+	bosun.RegisterSchedulers()
+
+	time.Sleep(10 * time.Minute)
 }
 
 func (b *Bosun) Initialize() error {
@@ -77,8 +82,15 @@ func (b *Bosun) Initialize() error {
 	// TODO for now bosun only support API V7
 	b.api = kibana.NewApiVer7(b.client)
 
+	// Init scheduler
+	b.scheduler = cron.New()
+	b.scheduler.Start()
+
 	// Init AutoIndexPattern
-	b.autoIndexPattern = *NewAutoIndexPattern(b.config.AutoIndexPattern)
+	if b.config.AutoIndexPattern.Enabled {
+		b.autoIndexPattern = *NewAutoIndexPattern(b.config.AutoIndexPattern)
+		b.logger.Infow(fmt.Sprintf("Loaded %d General Patterns for Auto Index Patterns Creation", len(b.autoIndexPattern.GeneralPatterns)))
+	}
 
 	return nil
 }

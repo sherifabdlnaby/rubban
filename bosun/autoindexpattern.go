@@ -4,7 +4,10 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/dustin/go-humanize"
+	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	"github.com/sherifabdlnaby/bosun/config"
 )
@@ -28,6 +31,8 @@ type GeneralPattern struct {
 type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
+	Schedule        cron.Schedule
+	entry           cron.Entry
 }
 
 func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
@@ -44,13 +49,21 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 		})
 	}
 
+	schedule, err := cron.ParseStandard(config.Schedule)
+	if err != nil {
+		panic(err)
+	}
+
 	return &AutoIndexPattern{
 		Enabled:         config.Enabled,
 		GeneralPatterns: generalPattern,
+		Schedule:        schedule,
 	}
 }
 
 func (b *Bosun) AutoIndexPattern() {
+
+	b.logger.Info("Running Auto Index Pattern...")
 
 	//// Set for Found Patterns ( a set datastructes using Map )
 	computedIndexPatterns := make(map[string]kibana.IndexPattern)
@@ -126,7 +139,9 @@ func (b *Bosun) AutoIndexPattern() {
 		b.logger.Errorw("Failed to bulk create new index patterns", "error", err.Error())
 	}
 
-	b.logger.Infow(fmt.Sprintf("Created %d Index Patterns.", len(newIndexPatterns)), "Index Patterns", newIndexPatterns)
+	b.logger.Infow(fmt.Sprintf("Successfully created %d Index Patterns.", len(newIndexPatterns)), "Index Patterns", newIndexPatterns)
+	next := b.autoIndexPattern.entry.Schedule.Next(time.Now())
+	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
 
 	return
 }
