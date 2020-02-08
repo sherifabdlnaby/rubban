@@ -1,7 +1,6 @@
 package config
 
 // TODO Default config for EVERYTHING
-// TODO Validate cron expr
 // TODO Extra Validation
 
 type Config struct {

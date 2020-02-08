@@ -6,6 +6,7 @@ import (
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
 	ens "github.com/go-playground/validator/translations/en"
+	"github.com/robfig/cron/v3"
 	"gopkg.in/go-playground/validator.v9"
 )
 
@@ -30,20 +31,24 @@ func validate(config Config) error {
 		return fmt.Errorf("errors validating struct config: %v", err.Error())
 	}
 
-	errList := customValidate(config)
-	if len(errList) != 0 {
-		return fmt.Errorf("errors validating struct config: %v", errList)
+	err = customValidate(config)
+	if err != nil {
+		return fmt.Errorf("errors validating struct config: %s", err.Error())
 	}
 
 	return nil
 }
 
 // Custom Validators
-func customValidate(config Config) []error {
-	errList := make([]error, 0)
-
+func customValidate(config Config) error {
 	// Put Custom Validation Here
 	// TODO Validate Regex Expressions to not contain multiple ** or ## and is a valid index pattern.
 
-	return errList
+	// Validate cron schedules
+	_, err := cron.ParseStandard(config.AutoIndexPattern.Schedule)
+	if err != nil {
+		return fmt.Errorf("cron expression not valid: %s", err.Error())
+	}
+
+	return nil
 }

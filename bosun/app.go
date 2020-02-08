@@ -74,7 +74,7 @@ func (b *Bosun) Initialize() error {
 	// Load config
 	b.config, err = config.Load("bosun")
 	if err != nil {
-		logger.Fatal("Failed to load configuration.", "error", err)
+		logger.Fatalw("Failed to load configuration.", "error", err)
 		os.Exit(1)
 	}
 
