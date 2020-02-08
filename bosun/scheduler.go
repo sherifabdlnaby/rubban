@@ -8,6 +8,10 @@ import (
 )
 
 func (b *Bosun) RegisterSchedulers() {
+
+	// Starting Scheduler
+	defer b.scheduler.Start()
+
 	// Register Auto Create Index Patterns
 	if b.autoIndexPattern.Enabled {
 		id := b.scheduler.Schedule(b.autoIndexPattern.Schedule, cron.FuncJob(b.AutoIndexPattern))

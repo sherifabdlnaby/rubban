@@ -3,7 +3,9 @@ package bosun
 import (
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
@@ -24,6 +26,11 @@ type Bosun struct {
 }
 
 func Main() {
+	// Signal Channels
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
+	// Create App
 	bosun := Bosun{}
 	err := bosun.Initialize()
 	if err != nil {
@@ -33,7 +40,28 @@ func Main() {
 	// Register Scheduler
 	bosun.RegisterSchedulers()
 
-	time.Sleep(10 * time.Minute)
+	// Termination
+	sig := <-signalChan
+	bosun.logger.Infof("Received %s signal, Bosun is shutting down...", sig.String())
+
+	ctx := bosun.scheduler.Stop()
+
+	// Wait for Running Jobs to finish.
+	select {
+	case <-ctx.Done():
+		break
+	default:
+		bosun.logger.Infof("Waiting for running jobs to finish...")
+		select {
+		case <-ctx.Done():
+
+		}
+	}
+
+	// Sync Logger and Close.
+	_ = bosun.logger.Sync()
+	bosun.logger.Infof("Goodbye. <3")
+	os.Exit(0)
 }
 
 func (b *Bosun) Initialize() error {
