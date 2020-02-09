@@ -1,17 +1,17 @@
 kibana:
-    host: localhost:5601
+    host: https://kibana:5601
     user: elastic
     password: changeme
 
 autoIndexPattern:
     enabled: true
-    schedule: "* * * * *"
+    schedule: "*/5 * * * *"
     generalPatterns:
-        -   pattern: logstash-apache-access-*-#
+        -   pattern: logstash-apache-access-*-?
             timeFieldName: "@timestamp"
 
 logging:
     level: info
+    color: false
+    format: json
     debug: false
-    color: true
-    format: console

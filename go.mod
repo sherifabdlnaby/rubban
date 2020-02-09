@@ -12,6 +12,7 @@ require (
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/joho/godotenv v1.3.0
 	github.com/leodido/go-urn v1.2.0 // indirect
+	github.com/mitchellh/mapstructure v1.1.2
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2

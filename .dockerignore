@@ -6,6 +6,11 @@
 !cmd/
 !go.*
 !internal/
+!version/
+!log/
+!config/
+!bosun/
+!*.dist
 !pkg/
 !static/
 !Makefile
