@@ -12,10 +12,10 @@ import (
 	"github.com/sherifabdlnaby/bosun/config"
 )
 
-var replaceForPattern = strings.NewReplacer("#", "*")
+var replaceForPattern = strings.NewReplacer("?", "*")
 
 func replacerForRegex(s string) string {
-	s = strings.NewReplacer("*", "(.*)", "#", "(.*)").Replace(s)
+	s = strings.NewReplacer("*", "(.*)", "?", "(.*)").Replace(s)
 	n := strings.Count(s, "(.*)")
 	s = strings.Replace(s, "(.*)", "(.*?)", n-1)
 	return s
@@ -110,12 +110,12 @@ func (b *Bosun) AutoIndexPattern() {
 						// This is a match Group
 						newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
 					} else {
-						// This is a wildcard (make it # for now) (yes there can be a more efficient logic for that.)
-						newIndexPattern = strings.Replace(newIndexPattern, "*", "#", 1)
+						// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
+						newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
 					}
 				}
 			}
-			newIndexPattern = strings.Replace(newIndexPattern, "#", "*", -1)
+			newIndexPattern = strings.Replace(newIndexPattern, "?", "*", -1)
 			_, ok := computedIndexPatterns[newIndexPattern]
 			if !ok {
 				computedIndexPatterns[newIndexPattern] = kibana.IndexPattern{
@@ -153,7 +153,7 @@ func getMatchGroups(pattern string) []int {
 		if char == 42 {
 			groups = append(groups, group)
 			group++
-		} else if char == 35 {
+		} else if char == 63 {
 			group++
 		}
 	}
