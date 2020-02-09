@@ -2,6 +2,7 @@ package kibana
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
@@ -66,8 +67,8 @@ func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 func (c *Client) getFullUrl(path string) string {
 	return c.baseUrl.String() + path
 }
-func (c *Client) get(uri string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", c.getFullUrl(uri), nil)
+func (c *Client) get(ctx context.Context, uri string) (*http.Response, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", c.getFullUrl(uri), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +111,7 @@ func (c *Client) postWithJson(uri string, body []byte) (*http.Response, error) {
 	return resp, nil
 }
 
-func (c *Client) Validate(retry int, waitTime time.Duration) bool {
+func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error
 	var resp *http.Response
 	var pingApiUrl = "/api/status"
@@ -118,31 +119,35 @@ func (c *Client) Validate(retry int, waitTime time.Duration) bool {
 	c.logger.Infof("Testing connection to Kibana API at %s", c.getFullUrl(pingApiUrl))
 
 	for i := 0; i < retry+1; i++ {
-
-		if i != 0 {
-			c.logger.Infof("Retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i, retry)
-			time.Sleep(waitTime)
-		}
-
-		resp, err = c.get(pingApiUrl)
-		if err == nil {
-			_ = resp.Body.Close()
-			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-				c.logger.Infof("Successfully connected to Kibana API %s", c.getFullUrl(pingApiUrl))
-				return true
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+			if i != 0 {
+				c.logger.Infof("Retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i, retry)
+				time.Sleep(waitTime)
 			}
-			err = fmt.Errorf("%s", resp.Status)
-		}
 
-		c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getFullUrl(pingApiUrl)), "error", err.Error())
+			resp, err = c.get(ctx, pingApiUrl)
+			if err == nil {
+				_ = resp.Body.Close()
+				if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+					c.logger.Infof("Successfully connected to Kibana API %s", c.getFullUrl(pingApiUrl))
+					return nil
+				}
+				err = fmt.Errorf("%s", resp.Status)
+			}
+
+			c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getFullUrl(pingApiUrl)), "error", err.Error())
+		}
 	}
-	return false
+	return err
 }
 
 func (c *Client) GuessVersion() (semver.Version, error) {
 
 	// 1
-	resp, err := c.get("/api/status")
+	resp, err := c.get(context.TODO(), "/api/status")
 	if err != nil {
 		return semver.Version{}, err
 	}

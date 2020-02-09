@@ -1,6 +1,7 @@
 package bosun
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/signal"
@@ -26,45 +27,27 @@ type Bosun struct {
 }
 
 func Main() {
-	// Signal Channels
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 
 	// Create App
 	bosun := Bosun{}
-	err := bosun.Initialize()
+
+	// Signal Channels
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+	mainCtx, cancel := context.WithCancel(context.Background())
+
+	go TerminateOnSignal(&bosun, cancel, signalChan)
+
+	err := bosun.Initialize(mainCtx)
 	if err != nil {
 		panic("Failed to Initialize Bosun. Error: " + err.Error())
 	}
 
 	// Register Scheduler
 	bosun.RegisterSchedulers()
-
-	// Termination
-	sig := <-signalChan
-	bosun.logger.Infof("Received %s signal, Bosun is shutting down...", sig.String())
-
-	ctx := bosun.scheduler.Stop()
-
-	// Wait for Running Jobs to finish.
-	select {
-	case <-ctx.Done():
-		break
-	default:
-		bosun.logger.Infof("Waiting for running jobs to finish...")
-		select {
-		case <-ctx.Done():
-
-		}
-	}
-
-	// Sync Logger and Close.
-	_ = bosun.logger.Sync()
-	bosun.logger.Infof("Goodbye. <3")
-	os.Exit(0)
 }
 
-func (b *Bosun) Initialize() error {
+func (b *Bosun) Initialize(ctx context.Context) error {
 
 	var err error
 
@@ -82,6 +65,10 @@ func (b *Bosun) Initialize() error {
 	b.logger = log.NewZapLoggerImpl("bosun", b.config.Logging)
 	b.logger.Info("Starting Bosun...")
 
+	// Init scheduler
+	b.scheduler = cron.New()
+	b.scheduler.Start()
+
 	// Init Kibana API Client
 	b.logger.Info("Initializing Kibana API Client...")
 	b.client, err = kibana.NewKibanaClient(b.config.Kibana, b.logger.Extend("client"))
@@ -90,7 +77,7 @@ func (b *Bosun) Initialize() error {
 	}
 
 	// Validate Connection
-	if !b.client.Validate(5, 10*time.Second) {
+	if err = b.client.Validate(ctx, 5, 10*time.Second); err != nil {
 		err = fmt.Errorf("couldn't validate connection to Kibana API")
 		b.logger.Fatal("Cannot Initialize Bosun without an Initial Connection to Kibana API")
 		return err
@@ -110,10 +97,6 @@ func (b *Bosun) Initialize() error {
 	// TODO for now bosun only support API V7
 	b.api = kibana.NewApiVer7(b.client)
 
-	// Init scheduler
-	b.scheduler = cron.New()
-	b.scheduler.Start()
-
 	// Init AutoIndexPattern
 	if b.config.AutoIndexPattern.Enabled {
 		b.autoIndexPattern = *NewAutoIndexPattern(b.config.AutoIndexPattern)
@@ -121,4 +104,31 @@ func (b *Bosun) Initialize() error {
 	}
 
 	return nil
+}
+
+func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc, signalChan chan os.Signal) {
+	// Termination
+	sig := <-signalChan
+	bosun.logger.Infof("Received %s signal, Bosun is shutting down...", sig.String())
+
+	// cancel context
+	cancel()
+
+	ctx := bosun.scheduler.Stop()
+	// Wait for Running Jobs to finish.
+	select {
+	case <-ctx.Done():
+		break
+	default:
+		bosun.logger.Infof("Waiting for running jobs to finish...")
+		select {
+		case <-ctx.Done():
+
+		}
+	}
+
+	// Sync Logger and Close.
+	_ = bosun.logger.Sync()
+	bosun.logger.Infof("Goodbye. <3")
+	os.Exit(0)
 }
