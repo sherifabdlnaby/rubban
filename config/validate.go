@@ -45,11 +45,11 @@ func customValidate(config Config) error {
 	// Put Custom Validation Here
 	for _, generalPattern := range config.AutoIndexPattern.GeneralPatterns {
 		pattern := generalPattern.Pattern
-		if strings.ContainsAny(pattern, "/\\?\"<>| ,") || len(pattern) > 255 ||
+		if strings.ContainsAny(pattern, "/\\#\"<>| ,") || len(pattern) > 255 ||
 			pattern == "." || pattern == ".." || strings.HasPrefix(pattern, "-") ||
 			strings.HasPrefix(pattern, "_") || strings.HasPrefix(pattern, "+") ||
 			pattern != strings.ToLower(pattern) || strings.Contains(pattern, "**") ||
-			strings.Contains(pattern, "##") {
+			strings.Contains(pattern, "??") {
 			return fmt.Errorf("invalid general pattern [%s]", pattern)
 		}
 	}
