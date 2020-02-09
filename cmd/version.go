@@ -8,8 +8,8 @@ import (
 // versionCmd represents the version command
 var versionCmd = &cobra.Command{
 	Use:   "version",
-	Short: "Print the version number of generated code example",
-	Long:  `All software has versions. This is generated code example`,
+	Short: "Print the version number of Bosun",
+	Long:  `All software has versions. This is Bosun version.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		version.Print()
 	},
