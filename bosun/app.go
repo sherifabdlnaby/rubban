@@ -16,7 +16,7 @@ import (
 )
 
 type Bosun struct {
-	config           config.Config
+	config           *config.Config
 	logger           log.Logger
 	client           *kibana.Client
 	semVer           semver.Version

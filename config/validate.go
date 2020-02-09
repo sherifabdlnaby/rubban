@@ -42,7 +42,15 @@ func validate(config Config) error {
 
 // Custom Validators
 func customValidate(config Config) error {
+
 	// Put Custom Validation Here
+
+	if config.AutoIndexPattern.Enabled {
+		if len(config.AutoIndexPattern.GeneralPatterns) < 1 {
+			return fmt.Errorf("a minimum of 1 general pattern is needed for Auto Index Pattern Creation. ")
+		}
+	}
+
 	for _, generalPattern := range config.AutoIndexPattern.GeneralPatterns {
 		pattern := generalPattern.Pattern
 		if strings.ContainsAny(pattern, "/\\#\"<>| ,") || len(pattern) > 255 ||

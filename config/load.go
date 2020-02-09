@@ -12,14 +12,14 @@ import (
 	"github.com/spf13/viper"
 )
 
-func Load(configName string) (Config, error) {
+func Load(configName string) (*Config, error) {
 	v := viper.New()
 	var err error
 	// load .env variables
 	if _, err = os.Stat("./.env"); err == nil || !os.IsNotExist(err) {
 		err := godotenv.Load()
 		if err != nil {
-			return Config{}, fmt.Errorf("error loading .env envvars: %w", err)
+			return nil, fmt.Errorf("error loading .env envvars: %w", err)
 		}
 	}
 
@@ -48,11 +48,11 @@ func Load(configName string) (Config, error) {
 
 	err = v.ReadInConfig()
 	if err != nil {
-		return Config{}, fmt.Errorf("error reading config: %w", err)
+		return nil, fmt.Errorf("error reading config: %w", err)
 	}
 
 	// Unmarshalling
-	cfg := Config{}
+	cfg := Default()
 	err = v.Unmarshal(&cfg, viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToIPHookFunc(),
@@ -60,13 +60,13 @@ func Load(configName string) (Config, error) {
 	)))
 
 	if err != nil {
-		return Config{}, fmt.Errorf("error unmarshalling config: %w", err)
+		return nil, fmt.Errorf("error unmarshalling config: %w", err)
 	}
 
 	// Validate
-	err = validate(cfg)
+	err = validate(*cfg)
 	if err != nil {
-		return Config{}, err
+		return nil, err
 	}
 
 	return cfg, nil

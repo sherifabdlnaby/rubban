@@ -19,8 +19,8 @@ type GeneralPattern struct {
 
 type AutoIndexPattern struct {
 	Enabled         bool
-	GeneralPatterns []GeneralPattern `validate:"required,min=1"`
-	Schedule        string           `validate:"required"`
+	GeneralPatterns []GeneralPattern
+	Schedule        string `validate:"required"`
 }
 
 type Logging struct {
@@ -28,4 +28,25 @@ type Logging struct {
 	Format string `validate:"required,oneof=console json logfmt"`
 	Debug  bool
 	Color  bool
+}
+
+func Default() *Config {
+	return &Config{
+		Kibana: Kibana{
+			Host:     "localhost:5601",
+			User:     "elastic",
+			Password: "changeme",
+		},
+		Logging: Logging{
+			Level:  "info",
+			Format: "json",
+			Debug:  false,
+			Color:  false,
+		},
+		AutoIndexPattern: AutoIndexPattern{
+			Enabled:         true,
+			GeneralPatterns: nil,
+			Schedule:        "*/5 * * * *",
+		},
+	}
 }
