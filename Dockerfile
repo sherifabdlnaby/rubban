@@ -28,9 +28,19 @@ FROM alpine:3.11
 
 ARG GIT_COMMIT
 ARG VERSION
-LABEL REPO="https://github.com/sherifabdlnaby/bosun"
-LABEL GIT_COMMIT=$GIT_COMMIT
-LABEL VERSION=$VERSION
+ARG BUILD_DATE
+
+LABEL   REPO="https://github.com/sherifabdlnaby/bosun" \
+        GIT_COMMIT=$GIT_COMMIT \
+        VERSION=$VERSION \
+        org.label-schema.build-date=$BUILD_DATE \
+        org.label-schema.name="Bosun" \
+        org.label-schema.description="Kibana Automatic Index Pattern Discovery and Other Curating Tasks." \
+        org.label-schema.url="https://github.com/sherifabdlnaby/bosun" \
+        org.label-schema.vcs-ref=$GIT_COMMIT \
+        org.label-schema.vcs-url="https://github.com/sherifabdlnaby/bosun" \
+        org.label-schema.version=$VERSION \
+        org.label-schema.schema-version="1.0"
 
 # Because of https://github.com/docker/docker/issues/14914
 ENV PATH=$PATH:/opt/bosun/

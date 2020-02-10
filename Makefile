@@ -5,7 +5,7 @@ BIN_NAME=bosun
 VERSION := $(shell git describe --exact-match 2> /dev/null || echo "`git symbolic-ref HEAD 2> /dev/null | cut -b 12-`-`git log --pretty=format:\"%h\" -1`")
 GIT_COMMIT=$(shell git rev-parse HEAD)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+DIRTY" || true)
-BUILD_DATE=$(shell date '+%Y-%m-%d-%H:%M:%S')
+BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 IMAGE_NAME := "sherifabdlnaby/bosun"
 FLAGS := -X github.com/sherifabdlnaby/bosun/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/sherifabdlnaby/bosun/version.Version=${VERSION} -X github.com/sherifabdlnaby/bosun/version.BuildDate=${BUILD_DATE}
 
@@ -40,9 +40,12 @@ build-alpine:
 	@echo "GOPATH=${GOPATH}"
 	GOOS=linux GOARCH=amd64 go build -ldflags ' -w -s ${FLAGS} ' -o bin/${BIN_NAME}
 
-package:
+build-image:
 	@echo "building image ${BIN_NAME} ${VERSION} $(GIT_COMMIT)"
-	docker build --build-arg VERSION=${VERSION} --build-arg GIT_COMMIT=$(GIT_COMMIT) -t $(IMAGE_NAME):local .
+	docker build	--build-arg VERSION=${VERSION} \
+	 				--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+	 				--build-arg BUILD_DATE=$(BUILD_DATE) \
+	 				-t $(IMAGE_NAME):local .
 
 tag:
 	@echo "Tagging: latest ${VERSION} $(GIT_COMMIT)"
