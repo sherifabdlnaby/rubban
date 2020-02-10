@@ -1,5 +1,5 @@
 <p align="center">
-<img width="680px" src="https://user-images.githubusercontent.com/16992394/74128390-be44df00-4be5-11ea-8cf0-03eec3cdeecb.png">
+<img width="400px" src="https://user-images.githubusercontent.com/16992394/74128390-be44df00-4be5-11ea-8cf0-03eec3cdeecb.png">
 </p>
 <h2 align="center">Bosun - Kibana Automatic Index Pattern Discovery and Other Curating Tasks.</h2>
 <p align="center">
