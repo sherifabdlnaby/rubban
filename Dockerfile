@@ -27,6 +27,8 @@ RUN make build-alpine
 FROM alpine:3.11
 
 ARG GIT_COMMIT
+ARG GIT_DIRTY
+ARG GIT_COMMIT_SHORT
 ARG VERSION
 ARG BUILD_DATE
 
@@ -37,7 +39,7 @@ LABEL   REPO="https://github.com/sherifabdlnaby/bosun" \
         org.label-schema.name="Bosun" \
         org.label-schema.description="Kibana Automatic Index Pattern Discovery and Other Curating Tasks." \
         org.label-schema.url="https://github.com/sherifabdlnaby/bosun" \
-        org.label-schema.vcs-ref=$GIT_COMMIT \
+        org.label-schema.vcs-ref=$GIT_COMMIT_SHORT \
         org.label-schema.vcs-url="https://github.com/sherifabdlnaby/bosun" \
         org.label-schema.version=$VERSION \
         org.label-schema.schema-version="1.0"

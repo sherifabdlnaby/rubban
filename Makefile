@@ -2,9 +2,10 @@
 
 BIN_NAME=bosun
 
-VERSION := $(shell git describe --exact-match 2> /dev/null || echo "`git symbolic-ref HEAD 2> /dev/null | cut -b 12-`-`git log --pretty=format:\"%h\" -1`")
+VERSION := $(shell git describe --exact-match --tags 2> /dev/null || git describe --tags )
 GIT_COMMIT=$(shell git rev-parse HEAD)
-GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+DIRTY" || true)
+GIT_COMMIT_SHORT=$(shell git rev-parse --short HEAD)
+GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+dirty" || true)
 BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 IMAGE_NAME := sherifabdlnaby/bosun
 FLAGS := -X github.com/sherifabdlnaby/bosun/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/sherifabdlnaby/bosun/version.Version=${VERSION} -X github.com/sherifabdlnaby/bosun/version.BuildDate=${BUILD_DATE}
@@ -44,6 +45,8 @@ build-image:
 	@echo "building image ${BIN_NAME} ${VERSION} $(GIT_COMMIT)"
 	docker build	--build-arg VERSION=${VERSION} \
 	 				--build-arg GIT_COMMIT=$(GIT_COMMIT) \
+	 				--build-arg GIT_COMMIT_SHORT=$(GIT_COMMIT_SHORT) \
+	 				--build-arg GIT_DIRTY=$(GIT_DIRTY) \
 	 				--build-arg BUILD_DATE=$(BUILD_DATE) \
 	 				-t $(IMAGE_NAME):local .
 
@@ -53,7 +56,12 @@ tag:
 	docker tag $(IMAGE_NAME):local $(IMAGE_NAME):${VERSION}
 	docker tag $(IMAGE_NAME):local $(IMAGE_NAME):latest
 
-push: tag
+tag-image:
+	@echo "Tagging: latest ${VERSION} $(GIT_COMMIT)"
+	docker tag $(IMAGE_NAME):local $(IMAGE_NAME):${VERSION}
+	docker tag $(IMAGE_NAME):local $(IMAGE_NAME):latest
+
+push-image: tag-image
 	@echo "Pushing docker image to registry: latest ${VERSION} $(GIT_COMMIT)"
 	docker push $(IMAGE_NAME):$(GIT_COMMIT)
 	docker push $(IMAGE_NAME):${VERSION}
