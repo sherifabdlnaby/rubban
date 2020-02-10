@@ -31,12 +31,13 @@ func Main() {
 	// Create App
 	bosun := Bosun{}
 
-	// Signal Channels
-	signalChan := make(chan os.Signal, 1)
-	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
 	mainCtx, cancel := context.WithCancel(context.Background())
 
-	go TerminateOnSignal(&bosun, cancel, signalChan)
+	shutdownSignal := make(chan struct{})
+	go func() {
+		TerminateOnSignal(&bosun, cancel)
+		shutdownSignal <- struct{}{}
+	}()
 
 	err := bosun.Initialize(mainCtx)
 	if err != nil {
@@ -45,6 +46,15 @@ func Main() {
 
 	// Register Scheduler
 	bosun.RegisterSchedulers()
+
+	// Wait to Shutdown
+	<-shutdownSignal
+
+	// Sync Logger and Close.
+	_ = bosun.logger.Sync()
+	bosun.logger.Infof("Goodbye. <3")
+
+	os.Exit(0)
 }
 
 func (b *Bosun) Initialize(ctx context.Context) error {
@@ -106,7 +116,12 @@ func (b *Bosun) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc, signalChan chan os.Signal) {
+func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc) {
+
+	// Signal Channels
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, syscall.SIGTERM, syscall.SIGINT, syscall.SIGQUIT)
+
 	// Termination
 	sig := <-signalChan
 	bosun.logger.Infof("Received %s signal, Bosun is shutting down...", sig.String())
@@ -126,9 +141,4 @@ func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc, signalChan chan 
 
 		}
 	}
-
-	// Sync Logger and Close.
-	_ = bosun.logger.Sync()
-	bosun.logger.Infof("Goodbye. <3")
-	os.Exit(0)
 }
