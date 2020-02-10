@@ -6,15 +6,15 @@ import (
 	"fmt"
 )
 
-type ApiVer7 struct {
+type APIVer7 struct {
 	client *Client
 }
 
-func NewApiVer7(client *Client) *ApiVer7 {
-	return &ApiVer7{client: client}
+func NewAPIVer7(client *Client) *APIVer7 {
+	return &APIVer7{client: client}
 }
 
-func (a *ApiVer7) Info() (Info, error) {
+func (a *APIVer7) Info() (Info, error) {
 	resp, err := a.client.get(context.TODO(), "/api/status")
 	if err != nil {
 		return Info{}, err
@@ -32,7 +32,7 @@ func (a *ApiVer7) Info() (Info, error) {
 	return info, err
 }
 
-func (a *ApiVer7) Indices(filter string) ([]Index, error) {
+func (a *APIVer7) Indices(filter string) ([]Index, error) {
 	indices := make([]Index, 0)
 	resp, err := a.client.post(fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter))
 	if err != nil {
@@ -48,14 +48,14 @@ func (a *ApiVer7) Indices(filter string) ([]Index, error) {
 	return indices, err
 }
 
-func (a *ApiVer7) IndexPatternFields(filter string) ([]IndexPattern, error) {
+func (a *APIVer7) IndexPatternFields(filter string) ([]IndexPattern, error) {
 
 	var err error
 	page := 1
 	count := 0
 	total := 0
-	aggPatterns := make([]IndexPattern, 0)
-	patterns := make([]IndexPattern, 0)
+	var aggPatterns []IndexPattern
+	var patterns []IndexPattern
 	for {
 		patterns, total, err = a.indexPatternPage(filter, page)
 		if err != nil {
@@ -74,16 +74,13 @@ func (a *ApiVer7) IndexPatternFields(filter string) ([]IndexPattern, error) {
 	return aggPatterns, nil
 }
 
-func (a *ApiVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
+func (a *APIVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 
-	var err error
 	page := 1
 	count := 0
-	total := 0
 	aggPatterns := make([]IndexPattern, 0)
-	patterns := make([]IndexPattern, 0)
 	for {
-		patterns, total, err = a.indexPatternPage(filter, page)
+		patterns, total, err := a.indexPatternPage(filter, page)
 		if err != nil {
 			return nil, err
 		}
@@ -100,7 +97,7 @@ func (a *ApiVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 	return aggPatterns, nil
 }
 
-func (a *ApiVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
+func (a *APIVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	if len(indexPattern) == 0 {
 		return nil
 	}
@@ -110,20 +107,20 @@ func (a *ApiVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	for _, pattern := range indexPattern {
 		bulkRequest = append(bulkRequest, BulkIndexPattern{
 			Type: "index-pattern",
-			Attributes: BulkIndexPatterAttributes{
+			Attributes: IndexPattern{
 				Title:         pattern.Title,
 				TimeFieldName: pattern.TimeFieldName,
 			},
 		})
 	}
-	// Json Marshalling
+	// Json Marshaling
 	buff, err := json.Marshal(bulkRequest)
 	if err != nil {
-		return fmt.Errorf("failed to JSON marshalling bulk create index pattern")
+		return fmt.Errorf("failed to JSON marshaling bulk create index pattern")
 	}
 
 	// Send Request
-	resp, err := a.client.postWithJson("/api/saved_objects/_bulk_create", buff)
+	resp, err := a.client.postWithJSON("/api/saved_objects/_bulk_create", buff)
 	if err != nil {
 		return fmt.Errorf("failed to bulk create saved objects, error: %s", err.Error())
 	}
@@ -136,7 +133,7 @@ func (a *ApiVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	return nil
 }
 
-func (a *ApiVer7) indexPatternPage(filter string, page int) ([]IndexPattern, int, error) {
+func (a *APIVer7) indexPatternPage(filter string, page int) ([]IndexPattern, int, error) {
 
 	indexPatterns := make([]IndexPattern, 0)
 	indexPatternPage := IndexPatternPage{}

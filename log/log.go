@@ -27,10 +27,16 @@ type Logger interface {
 	WithFields(args ...interface{}) Logger
 }
 
+const (
+	json    = "json"
+	logfmt  = "logfmt"
+	console = "console"
+)
+
 func Default() Logger {
 	return NewZapLoggerImpl("root", config.Logging{
 		Level:  "info",
-		Format: "console",
+		Format: console,
 		Debug:  true,
 		Color:  false,
 	})

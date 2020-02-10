@@ -40,10 +40,8 @@ func Load(configName string) (*Config, error) {
 	configLocationEnv := fmt.Sprintf("%s_CONFIG_DIR", strings.ToUpper(configName))
 	if configDir, isSet := os.LookupEnv(configLocationEnv); isSet {
 		v.AddConfigPath(configDir + "/")
-	} else {
-		if _, err = os.Stat("."); err == nil || !os.IsNotExist(err) {
-			v.AddConfigPath(".")
-		}
+	} else if _, err = os.Stat("."); err == nil || !os.IsNotExist(err) {
+		v.AddConfigPath(".")
 	}
 
 	err = v.ReadInConfig()
@@ -56,7 +54,7 @@ func Load(configName string) (*Config, error) {
 	err = v.Unmarshal(&cfg, viper.DecodeHook(mapstructure.ComposeDecodeHookFunc(
 		mapstructure.StringToTimeDurationHookFunc(),
 		mapstructure.StringToIPHookFunc(),
-		StringJsonArrayOrSlicesToConfig(),
+		StringJSONArrayOrSlicesToConfig(),
 	)))
 
 	if err != nil {
@@ -72,7 +70,7 @@ func Load(configName string) (*Config, error) {
 	return cfg, nil
 }
 
-func StringJsonArrayOrSlicesToConfig() func(f reflect.Kind, t reflect.Kind, data interface{}) (interface{}, error) {
+func StringJSONArrayOrSlicesToConfig() func(f reflect.Kind, t reflect.Kind, data interface{}) (interface{}, error) {
 	return func(
 		f reflect.Kind,
 		t reflect.Kind,
@@ -88,7 +86,7 @@ func StringJsonArrayOrSlicesToConfig() func(f reflect.Kind, t reflect.Kind, data
 
 		var ret interface{}
 		if t == reflect.Map {
-			jsonMap := make(map[interface{}]interface{}, 0)
+			jsonMap := make(map[interface{}]interface{})
 			err := json.Unmarshal([]byte(raw), &jsonMap)
 			if err != nil {
 				return raw, fmt.Errorf("couldn't map string-ifed Json to Map: %s", err.Error())
@@ -104,8 +102,9 @@ func StringJsonArrayOrSlicesToConfig() func(f reflect.Kind, t reflect.Kind, data
 					return val, err
 				}
 				ret = val
+			} else {
+				ret = jsonArray
 			}
-			ret = jsonArray
 		}
 
 		return ret, nil

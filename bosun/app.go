@@ -105,7 +105,7 @@ func (b *Bosun) Initialize(ctx context.Context) error {
 
 	// Determine API
 	// TODO for now bosun only support API V7
-	b.api = kibana.NewApiVer7(b.client)
+	b.api = kibana.NewAPIVer7(b.client)
 
 	// Init AutoIndexPattern
 	if b.config.AutoIndexPattern.Enabled {
@@ -136,9 +136,6 @@ func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc) {
 		break
 	default:
 		bosun.logger.Infof("Waiting for running jobs to finish...")
-		select {
-		case <-ctx.Done():
-
-		}
+		<-ctx.Done()
 	}
 }

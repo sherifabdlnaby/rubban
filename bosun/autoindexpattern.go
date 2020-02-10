@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/dustin/go-humanize"
 	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	"github.com/sherifabdlnaby/bosun/config"
@@ -101,7 +102,7 @@ func (b *Bosun) AutoIndexPattern() {
 
 	// Bulk Create Index Patterns
 	/// Create List of Index Patterns
-	var newIndexPatterns []kibana.IndexPattern
+	newIndexPatterns := make([]kibana.IndexPattern, 0)
 	for _, indexPattern := range computedIndexPatterns {
 		newIndexPatterns = append(newIndexPatterns, indexPattern)
 	}
@@ -115,9 +116,7 @@ func (b *Bosun) AutoIndexPattern() {
 		time.Since(startTime).Milliseconds()), "Index Patterns", newIndexPatterns)
 
 	next := b.autoIndexPattern.entry.Schedule.Next(time.Now())
-	b.logger.Infof("Next run at %s (%s)", next.String())
-
-	return
+	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
 }
 
 func (b *Bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns IndexPatternsMap) {
@@ -126,6 +125,7 @@ func (b *Bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatt
 	if err != nil {
 		b.logger.Warnw("failed to get index patterns matching general pattern. escaping this one...",
 			"generalPattern", generalPattern.Pattern, "error", err.Error())
+		return
 	}
 
 	patternsList := make([]string, 0)
@@ -135,6 +135,11 @@ func (b *Bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatt
 
 	// Get Indices Matching Given General Pattern
 	indices, err := b.api.Indices(generalPattern.Pattern)
+	if err != nil {
+		b.logger.Warnw("failed to get indices matching a general pattern. escaping this one...",
+			"generalPattern", generalPattern.Pattern, "error", err.Error())
+		return
+	}
 
 	// Get Indices That Hasn't Matched ANY IndexPattern
 	//// Build regex

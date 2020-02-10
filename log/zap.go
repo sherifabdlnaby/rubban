@@ -35,23 +35,23 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 
 	// Format
 	switch config.Format {
-	case "console":
-		zapConfig.Encoding = "console"
+	case console:
+		zapConfig.Encoding = console
 		zapConfig.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
-	case "json":
-		zapConfig.Encoding = "json"
-	case "logfmt":
-		err := zap.RegisterEncoder("logfmt", func(encoderConfig zapcore.EncoderConfig) (encoder zapcore.Encoder, err error) {
+	case json:
+		zapConfig.Encoding = json
+	case logfmt:
+		err := zap.RegisterEncoder(logfmt, func(encoderConfig zapcore.EncoderConfig) (encoder zapcore.Encoder, err error) {
 			return zaplogfmt.NewEncoder(encoderConfig), nil
 		})
 		if err != nil {
 			panic(err)
 		}
-		zapConfig.Encoding = "logfmt"
+		zapConfig.Encoding = logfmt
 	}
 
 	// Color
-	if config.Color && (config.Format == "console" || config.Format == "logfmt") {
+	if config.Color && (config.Format == console || config.Format == logfmt) {
 		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
