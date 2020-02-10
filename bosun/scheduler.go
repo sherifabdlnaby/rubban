@@ -14,7 +14,7 @@ func (b *bosun) RegisterSchedulers() {
 
 	// Register Auto Create Index Patterns
 	if b.autoIndexPattern.Enabled {
-		id := b.scheduler.Schedule(b.autoIndexPattern.Schedule, cron.FuncJob(b.AutoIndexPattern))
+		id := b.scheduler.Schedule(b.autoIndexPattern.Schedule, cron.FuncJob(b.RunAutoIndexPattern))
 
 		b.autoIndexPattern.entry = b.scheduler.Entry(id)
 

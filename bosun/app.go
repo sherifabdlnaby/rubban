@@ -12,7 +12,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
-	config "github.com/sherifabdlnaby/bosun/config"
+	"github.com/sherifabdlnaby/bosun/config"
 	"github.com/sherifabdlnaby/bosun/log"
 )
 
@@ -108,7 +108,7 @@ func (b *bosun) Initialize(ctx context.Context) error {
 	// TODO for now bosun only support API V7
 	b.api = kibana.NewAPIVer7(b.client)
 
-	// Init AutoIndexPattern
+	// Init RunAutoIndexPattern
 	if b.config.AutoIndexPattern.Enabled {
 		b.autoIndexPattern = *NewAutoIndexPattern(b.config.AutoIndexPattern)
 		b.logger.Infow(fmt.Sprintf("Loaded %d General Patterns for Auto Index Patterns Creation", len(b.autoIndexPattern.GeneralPatterns)))

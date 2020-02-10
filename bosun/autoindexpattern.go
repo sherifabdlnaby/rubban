@@ -23,7 +23,7 @@ type GeneralPattern struct {
 	matchGroups   []int
 }
 
-//AutoIndexPattern hold attributes for a AutoIndexPattern loaded from config.
+//AutoIndexPattern hold attributes for a RunAutoIndexPattern loaded from config.
 type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
@@ -86,7 +86,7 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 	}
 }
 
-func (b *bosun) AutoIndexPattern() {
+func (b *bosun) RunAutoIndexPattern() {
 
 	b.logger.Info("Running Auto Index Pattern...")
 	startTime := time.Now()
