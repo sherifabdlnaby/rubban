@@ -1,0 +1,25 @@
+run:
+    skip-dirs:
+        - .gen
+
+    skip-files:
+        - ".*_gen\\.go$"
+
+linters-settings:
+    golint:
+        min-confidence: 0.1
+    goimports:
+        local-prefixes: bosun
+
+linters:
+    enable-all: true
+    disable:
+        - funlen
+        - maligned
+        - wsl
+
+        # Drives todos nuts
+        - godox
+
+service:
+    golangci-lint-version: 1.21.x
