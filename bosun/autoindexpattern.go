@@ -8,7 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dustin/go-humanize"
 	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	"github.com/sherifabdlnaby/bosun/config"
@@ -85,6 +84,7 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 func (b *Bosun) AutoIndexPattern() {
 
 	b.logger.Info("Running Auto Index Pattern...")
+	startTime := time.Now()
 
 	//// Set for Found Patterns ( a set datastructes using Map )
 	computedIndexPatterns := make(IndexPatternsMap)
@@ -111,9 +111,11 @@ func (b *Bosun) AutoIndexPattern() {
 		b.logger.Errorw("Failed to bulk create new index patterns", "error", err.Error())
 	}
 
-	b.logger.Infow(fmt.Sprintf("Successfully created %d Index Patterns.", len(newIndexPatterns)), "Index Patterns", newIndexPatterns)
+	b.logger.Infow(fmt.Sprintf("Successfully created %d Index Patterns. (took ≅ %dms)", len(newIndexPatterns),
+		time.Since(startTime).Milliseconds()), "Index Patterns", newIndexPatterns)
+
 	next := b.autoIndexPattern.entry.Schedule.Next(time.Now())
-	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
+	b.logger.Infof("Next run at %s (%s)", next.String())
 
 	return
 }
