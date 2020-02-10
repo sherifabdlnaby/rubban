@@ -1,17 +1,35 @@
 package bosun
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/dustin/go-humanize"
 	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/bosun/bosun/kibana"
 	"github.com/sherifabdlnaby/bosun/config"
+	"github.com/sherifabdlnaby/gpool"
 )
 
+type GeneralPattern struct {
+	Pattern       string
+	regex         regexp.Regexp
+	TimeFieldName string
+	matchGroups   []int
+}
+
+type AutoIndexPattern struct {
+	Enabled         bool
+	GeneralPatterns []GeneralPattern
+	Schedule        cron.Schedule
+	entry           cron.Entry
+}
+
+// string replacers
 var replaceForPattern = strings.NewReplacer("?", "*")
 
 func replacerForRegex(s string) string {
@@ -21,18 +39,21 @@ func replacerForRegex(s string) string {
 	return s
 }
 
-type GeneralPattern struct {
-	Pattern       string
-	Regex         regexp.Regexp
-	TimeFieldName string
-	MatchGroups   []int
-}
+// map will be used to agg results of multiple concurrent api requests
+var mu sync.Mutex
 
-type AutoIndexPattern struct {
-	Enabled         bool
-	GeneralPatterns []GeneralPattern
-	Schedule        cron.Schedule
-	entry           cron.Entry
+type IndexPatternsMap map[string]kibana.IndexPattern
+
+func (i IndexPatternsMap) set(indexPattern, timeFieldName string) {
+	mu.Lock()
+	_, ok := i[indexPattern]
+	if !ok {
+		i[indexPattern] = kibana.IndexPattern{
+			Title:         indexPattern,
+			TimeFieldName: timeFieldName,
+		}
+	}
+	mu.Unlock()
 }
 
 func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
@@ -43,9 +64,9 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 		regex := regexp.MustCompile(replacerForRegex(pattern.Pattern))
 		generalPattern = append(generalPattern, GeneralPattern{
 			Pattern:       replaceForPattern.Replace(pattern.Pattern),
-			Regex:         *regex,
+			regex:         *regex,
 			TimeFieldName: pattern.TimeFieldName,
-			MatchGroups:   getMatchGroups(pattern.Pattern),
+			matchGroups:   getMatchGroups(pattern.Pattern),
 		})
 	}
 
@@ -66,66 +87,17 @@ func (b *Bosun) AutoIndexPattern() {
 	b.logger.Info("Running Auto Index Pattern...")
 
 	//// Set for Found Patterns ( a set datastructes using Map )
-	computedIndexPatterns := make(map[string]kibana.IndexPattern)
+	computedIndexPatterns := make(IndexPatternsMap)
 
-	// TODO make this concurrent
+	pool := gpool.NewPool(10)
 	for _, generalPattern := range b.autoIndexPattern.GeneralPatterns {
-
-		// TODO send those two concurrently.
-
-		// Get Current IndexPattern Matching Given General Patterns
-		indexPatterns, err := b.api.IndexPatterns(generalPattern.Pattern)
-		if err != nil {
-			b.logger.Warnw("failed to get index patterns matching a general pattern. escaping this one...", "generalPattern", generalPattern.Pattern)
-			continue
-		}
-		patternsList := make([]string, 0)
-		for _, index := range indexPatterns {
-			patternsList = append(patternsList, replacerForRegex(index.Title))
-		}
-
-		// Get Indices Matching Given General Pattern
-		indices, err := b.api.Indices(generalPattern.Pattern)
-		unmatchedIndices := make([]string, 0)
-
-		// Get Indices That Hasn't Matched ANY IndexPattern
-		//// Build Regex
-		matchedIndicesRegx := regexp.MustCompile(strings.Join(patternsList, "|"))
-
-		//// Filter Indices
-		for _, index := range indices {
-			if !matchedIndicesRegx.MatchString(index.Name) {
-				unmatchedIndices = append(unmatchedIndices, index.Name)
-			}
-		}
-
-		// Build Index Pattern for every unmatched Index
-		for _, unmatchedIndex := range unmatchedIndices {
-			matchGroups := generalPattern.Regex.FindStringSubmatch(unmatchedIndex)
-			newIndexPattern := generalPattern.Pattern
-			/// Start from 1 to escape first match group which is the whole string.
-			for i := 1; i < len(matchGroups); i++ {
-				for _, matchGroup := range generalPattern.MatchGroups {
-					if matchGroup == i {
-						// This is a match Group
-						newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
-					} else {
-						// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
-						newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
-					}
-				}
-			}
-			newIndexPattern = strings.Replace(newIndexPattern, "?", "*", -1)
-			_, ok := computedIndexPatterns[newIndexPattern]
-			if !ok {
-				computedIndexPatterns[newIndexPattern] = kibana.IndexPattern{
-					Title:         newIndexPattern,
-					TimeFieldName: generalPattern.TimeFieldName,
-				}
-			}
-		}
-
+		_ = pool.Enqueue(context.TODO(), func() {
+			b.getIndexPattern(generalPattern, computedIndexPatterns)
+		})
 	}
+
+	// Wait for Above to Return
+	pool.Stop()
 
 	// Bulk Create Index Patterns
 	/// Create List of Index Patterns
@@ -144,6 +116,60 @@ func (b *Bosun) AutoIndexPattern() {
 	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
 
 	return
+}
+
+func (b *Bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns IndexPatternsMap) {
+	// Get Current IndexPattern Matching Given General Patterns
+	indexPatterns, err := b.api.IndexPatterns(generalPattern.Pattern)
+	if err != nil {
+		b.logger.Warnw("failed to get index patterns matching general pattern. escaping this one...",
+			"generalPattern", generalPattern.Pattern, "error", err.Error())
+	}
+
+	patternsList := make([]string, 0)
+	for _, index := range indexPatterns {
+		patternsList = append(patternsList, replacerForRegex(index.Title))
+	}
+
+	// Get Indices Matching Given General Pattern
+	indices, err := b.api.Indices(generalPattern.Pattern)
+
+	// Get Indices That Hasn't Matched ANY IndexPattern
+	//// Build regex
+	matchedIndicesRegx := regexp.MustCompile(strings.Join(patternsList, "|"))
+
+	//// Filter Indices
+	unmatchedIndices := make([]string, 0)
+	for _, index := range indices {
+		if !matchedIndicesRegx.MatchString(index.Name) {
+			unmatchedIndices = append(unmatchedIndices, index.Name)
+		}
+	}
+
+	// Build Index Pattern for every unmatched Index
+	for _, unmatchedIndex := range unmatchedIndices {
+		newIndexPattern := buildIndexPattern(generalPattern, unmatchedIndex)
+		computedIndexPatterns.set(newIndexPattern, generalPattern.TimeFieldName)
+	}
+}
+
+func buildIndexPattern(generalPattern GeneralPattern, unmatchedIndex string) string {
+	matchGroups := generalPattern.regex.FindStringSubmatch(unmatchedIndex)
+	newIndexPattern := generalPattern.Pattern
+	/// Start from 1 to escape first match group which is the whole string.
+	for i := 1; i < len(matchGroups); i++ {
+		for _, matchGroup := range generalPattern.matchGroups {
+			if matchGroup == i {
+				// This is a match Group
+				newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
+			} else {
+				// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
+				newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
+			}
+		}
+	}
+	newIndexPattern = strings.Replace(newIndexPattern, "?", "*", -1)
+	return newIndexPattern
 }
 
 func getMatchGroups(pattern string) []int {

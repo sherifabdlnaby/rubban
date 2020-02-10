@@ -14,6 +14,7 @@ require (
 	github.com/leodido/go-urn v1.2.0 // indirect
 	github.com/mitchellh/mapstructure v1.1.2
 	github.com/robfig/cron/v3 v3.0.1
+	github.com/sherifabdlnaby/gpool v1.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
 	github.com/sykesm/zap-logfmt v0.0.3
