@@ -16,6 +16,7 @@ import (
 	"github.com/sherifabdlnaby/bosun/log"
 )
 
+//Client is a HTTP API Request wrapper.
 type Client struct {
 	baseURL  *url.URL
 	username string
@@ -24,18 +25,18 @@ type Client struct {
 	logger   log.Logger
 }
 
+//API is an interface for supporting multiple Kibana APIs
 type API interface {
 	Info() (Info, error)
 
 	Indices(filter string) ([]Index, error)
-
-	IndexPatternFields(filter string) ([]IndexPattern, error)
 
 	IndexPatterns(filter string) ([]IndexPattern, error)
 
 	BulkCreateIndexPattern(indexPattern []IndexPattern) error
 }
 
+//NewKibanaClient Constructor
 func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 
 	// Create Base URL
@@ -111,6 +112,7 @@ func (c *Client) postWithJSON(uri string, body []byte) (*http.Response, error) {
 	return resp, nil
 }
 
+//Validate validate connection to Kibana by pinging /status api.
 func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error
 	var resp *http.Response
@@ -144,6 +146,7 @@ func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration
 	return err
 }
 
+//GuessVersion Get Kibana Version (Will use different methods to determine API version)
 func (c *Client) GuessVersion() (semver.Version, error) {
 
 	// 1

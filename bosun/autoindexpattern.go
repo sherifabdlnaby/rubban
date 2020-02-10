@@ -15,6 +15,7 @@ import (
 	"github.com/sherifabdlnaby/gpool"
 )
 
+//GeneralPattern hold attributes for a GeneralPattern loaded from config.
 type GeneralPattern struct {
 	Pattern       string
 	regex         regexp.Regexp
@@ -22,6 +23,7 @@ type GeneralPattern struct {
 	matchGroups   []int
 }
 
+//AutoIndexPattern hold attributes for a AutoIndexPattern loaded from config.
 type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
@@ -42,9 +44,10 @@ func replacerForRegex(s string) string {
 // map will be used to agg results of multiple concurrent api requests
 var mu sync.Mutex
 
-type IndexPatternsMap map[string]kibana.IndexPattern
+//indexPatternMap A map with a concurrent-safe set operation.
+type indexPatternMap map[string]kibana.IndexPattern
 
-func (i IndexPatternsMap) set(indexPattern, timeFieldName string) {
+func (i indexPatternMap) set(indexPattern, timeFieldName string) {
 	mu.Lock()
 	_, ok := i[indexPattern]
 	if !ok {
@@ -56,6 +59,7 @@ func (i IndexPatternsMap) set(indexPattern, timeFieldName string) {
 	mu.Unlock()
 }
 
+//NewAutoIndexPattern Constructor
 func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 
 	generalPattern := make([]GeneralPattern, 0)
@@ -82,13 +86,13 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 	}
 }
 
-func (b *Bosun) AutoIndexPattern() {
+func (b *bosun) AutoIndexPattern() {
 
 	b.logger.Info("Running Auto Index Pattern...")
 	startTime := time.Now()
 
 	//// Set for Found Patterns ( a set datastructes using Map )
-	computedIndexPatterns := make(IndexPatternsMap)
+	computedIndexPatterns := make(indexPatternMap)
 
 	pool := gpool.NewPool(10)
 	for _, generalPattern := range b.autoIndexPattern.GeneralPatterns {
@@ -119,7 +123,7 @@ func (b *Bosun) AutoIndexPattern() {
 	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
 }
 
-func (b *Bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns IndexPatternsMap) {
+func (b *bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns indexPatternMap) {
 	// Get Current IndexPattern Matching Given General Patterns
 	indexPatterns, err := b.api.IndexPatterns(generalPattern.Pattern)
 	if err != nil {

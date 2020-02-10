@@ -16,7 +16,7 @@ import (
 	"github.com/sherifabdlnaby/bosun/log"
 )
 
-type Bosun struct {
+type bosun struct {
 	config           *config.Config
 	logger           log.Logger
 	client           *kibana.Client
@@ -26,22 +26,23 @@ type Bosun struct {
 	autoIndexPattern AutoIndexPattern
 }
 
+// Main is the main function of the application, it will be run by cobra's root command.
 func Main() {
 
 	// Create App
-	bosun := Bosun{}
+	bosun := bosun{}
 
 	mainCtx, cancel := context.WithCancel(context.Background())
 
 	shutdownSignal := make(chan struct{})
 	go func() {
-		TerminateOnSignal(&bosun, cancel)
+		bosun.terminateOnSignal(cancel)
 		shutdownSignal <- struct{}{}
 	}()
 
 	err := bosun.Initialize(mainCtx)
 	if err != nil {
-		panic("Failed to Initialize Bosun. Error: " + err.Error())
+		panic("Failed to Initialize bosun. Error: " + err.Error())
 	}
 
 	// Register Scheduler
@@ -57,7 +58,7 @@ func Main() {
 	os.Exit(0)
 }
 
-func (b *Bosun) Initialize(ctx context.Context) error {
+func (b *bosun) Initialize(ctx context.Context) error {
 
 	var err error
 
@@ -73,7 +74,7 @@ func (b *Bosun) Initialize(ctx context.Context) error {
 
 	// Init logger
 	b.logger = log.NewZapLoggerImpl("bosun", b.config.Logging)
-	b.logger.Info("Starting Bosun...")
+	b.logger.Info("Starting bosun...")
 
 	// Init scheduler
 	b.scheduler = cron.New()
@@ -89,7 +90,7 @@ func (b *Bosun) Initialize(ctx context.Context) error {
 	// Validate Connection
 	if err = b.client.Validate(ctx, 5, 10*time.Second); err != nil {
 		err = fmt.Errorf("couldn't validate connection to Kibana API")
-		b.logger.Fatal("Cannot Initialize Bosun without an Initial Connection to Kibana API")
+		b.logger.Fatal("Cannot Initialize bosun without an Initial Connection to Kibana API")
 		return err
 	}
 	b.logger.Info("Validated Initial Connection to Kibana API")
@@ -116,7 +117,7 @@ func (b *Bosun) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc) {
+func (b *bosun) terminateOnSignal(cancel context.CancelFunc) {
 
 	// Signal Channels
 	signalChan := make(chan os.Signal, 1)
@@ -124,18 +125,18 @@ func TerminateOnSignal(bosun *Bosun, cancel context.CancelFunc) {
 
 	// Termination
 	sig := <-signalChan
-	bosun.logger.Infof("Received %s signal, Bosun is shutting down...", sig.String())
+	b.logger.Infof("Received %s signal, b is shutting down...", sig.String())
 
 	// cancel context
 	cancel()
 
-	ctx := bosun.scheduler.Stop()
+	ctx := b.scheduler.Stop()
 	// Wait for Running Jobs to finish.
 	select {
 	case <-ctx.Done():
 		break
 	default:
-		bosun.logger.Infof("Waiting for running jobs to finish...")
+		b.logger.Infof("Waiting for running jobs to finish...")
 		<-ctx.Done()
 	}
 }

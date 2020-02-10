@@ -1,28 +1,33 @@
 package config
 
+//Config for Config Unmarshalling
 type Config struct {
 	Kibana           Kibana           `validate:"required"`
 	Logging          Logging          `validate:"required"`
 	AutoIndexPattern AutoIndexPattern `validate:"required"`
 }
 
+//Kibana for Config Unmarshalling
 type Kibana struct {
 	Host     string `validate:"required,uri"`
 	User     string `validate:"required_with=password"`
 	Password string `validate:"required_with=User"`
 }
 
+//GeneralPattern for Config Unmarshalling
 type GeneralPattern struct {
 	Pattern       string `validate:"required"`
 	TimeFieldName string
 }
 
+//AutoIndexPattern for Config Unmarshalling
 type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
 	Schedule        string `validate:"required"`
 }
 
+//Logging for Config Unmarshalling
 type Logging struct {
 	Level  string `validate:"required,oneof=debug info warn fatal panic"`
 	Format string `validate:"required,oneof=console json logfmt"`
@@ -30,6 +35,7 @@ type Logging struct {
 	Color  bool
 }
 
+//Default Return App Default Config
 func Default() *Config {
 	return &Config{
 		Kibana: Kibana{

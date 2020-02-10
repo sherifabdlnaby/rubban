@@ -12,6 +12,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+//Load Load Configuration from All Sources, starting
+//	1- Environment Variables.	(ex: BOSUN_KIBANA_HOST=https://kibana:5601"
+//	2- .env file.
+//	3- bosun.(yaml|yml|json|toml)
+//	(values from the earlier overwrite the latter).
 func Load(configName string) (*Config, error) {
 	v := viper.New()
 	var err error
@@ -70,6 +75,7 @@ func Load(configName string) (*Config, error) {
 	return cfg, nil
 }
 
+//StringJSONArrayOrSlicesToConfig will convert Json Encoded Strings to Maps or Slices, Used Primarily to support Slices and Maps in Environment variables
 func StringJSONArrayOrSlicesToConfig() func(f reflect.Kind, t reflect.Kind, data interface{}) (interface{}, error) {
 	return func(
 		f reflect.Kind,

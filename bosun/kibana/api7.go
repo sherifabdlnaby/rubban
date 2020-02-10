@@ -6,14 +6,17 @@ import (
 	"fmt"
 )
 
+//APIVer7 Implements API Calls compatible with Kibana 7^
 type APIVer7 struct {
 	client *Client
 }
 
+//NewAPIVer7 Constructor
 func NewAPIVer7(client *Client) *APIVer7 {
 	return &APIVer7{client: client}
 }
 
+//Info Return Kibana Info
 func (a *APIVer7) Info() (Info, error) {
 	resp, err := a.client.get(context.TODO(), "/api/status")
 	if err != nil {
@@ -32,6 +35,7 @@ func (a *APIVer7) Info() (Info, error) {
 	return info, err
 }
 
+//Indices Get Indices match supported filter (support wildcards)
 func (a *APIVer7) Indices(filter string) ([]Index, error) {
 	indices := make([]Index, 0)
 	resp, err := a.client.post(fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter))
@@ -48,32 +52,7 @@ func (a *APIVer7) Indices(filter string) ([]Index, error) {
 	return indices, err
 }
 
-func (a *APIVer7) IndexPatternFields(filter string) ([]IndexPattern, error) {
-
-	var err error
-	page := 1
-	count := 0
-	total := 0
-	var aggPatterns []IndexPattern
-	var patterns []IndexPattern
-	for {
-		patterns, total, err = a.indexPatternPage(filter, page)
-		if err != nil {
-			return nil, err
-		}
-
-		aggPatterns = append(aggPatterns, patterns...)
-		count += len(patterns)
-		page++
-
-		if count >= total {
-			break
-		}
-	}
-
-	return aggPatterns, nil
-}
-
+//IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
 func (a *APIVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 
 	page := 1
@@ -97,6 +76,7 @@ func (a *APIVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 	return aggPatterns, nil
 }
 
+//BulkCreateIndexPattern Add Index Patterns to Kibana
 func (a *APIVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	if len(indexPattern) == 0 {
 		return nil

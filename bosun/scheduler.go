@@ -7,7 +7,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func (b *Bosun) RegisterSchedulers() {
+func (b *bosun) RegisterSchedulers() {
 
 	// Starting Scheduler
 	defer b.scheduler.Start()

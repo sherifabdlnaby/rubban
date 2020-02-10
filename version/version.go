@@ -21,6 +21,7 @@ var GoVersion = runtime.Version()
 // OsArch returns the os and arch used to build the binary
 var OsArch = fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
 
+//Get Gets Version ¯\_(ツ)_/¯
 func Get() string {
 	buf := new(bytes.Buffer)
 	_, _ = fmt.Fprintln(buf, "Build Date:", BuildDate)
@@ -31,6 +32,7 @@ func Get() string {
 	return buf.String()
 }
 
+//Print Prints the Version ¯\_(ツ)_/¯
 func Print() {
 	fmt.Println(Get())
 }

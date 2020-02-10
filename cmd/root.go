@@ -11,9 +11,9 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "Bosun",
-	Short: "Start Bosun",
-	Long: `Start Bosun according to configuration loaded from:
+	Use:   "bosun",
+	Short: "Start bosun",
+	Long: `Start bosun according to configuration loaded from:
 	1- Environment Variables.	(ex: BOSUN_KIBANA_HOST=https://kibana:5601"
 	2- .env file.
 	3- bosun.(yaml|yml|json|toml)

@@ -11,6 +11,7 @@ type zapLogger struct {
 	l *zap.SugaredLogger
 }
 
+//NewZapLoggerImpl Return Zap Instance
 func NewZapLoggerImpl(name string, config config.Logging) Logger {
 
 	// Base config

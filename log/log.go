@@ -2,7 +2,7 @@ package log
 
 import "github.com/sherifabdlnaby/bosun/config"
 
-// logger defines a set of methods for writing application logs.
+// Logger defines a set of methods for writing application logs.
 type Logger interface {
 	Extend(name string) Logger
 	Debug(args ...interface{})
@@ -33,6 +33,7 @@ const (
 	console = "console"
 )
 
+//Default Return Default Logger that can be used before loading any configuration
 func Default() Logger {
 	return NewZapLoggerImpl("root", config.Logging{
 		Level:  "info",
