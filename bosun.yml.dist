@@ -1,5 +1,5 @@
 kibana:
-    host: https://kibana:5601
+    host: kibana:5601
     user: elastic
     password: changeme
 
