@@ -9,17 +9,23 @@
    <a>
       <img src="https://img.shields.io/github/v/tag/sherifabdlnaby/bosun?label=release&amp;sort=semver">
     </a>
-   <a>
-      <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="contributions welcome">
+   <a href="https://hub.docker.com/repository/docker/sherifabdlnaby/bosun">
+      <img src="https://badgen.net/docker/pulls/sherifabdlnaby/bosun?label=docker%20pulls&icon=docker" alt="docker pulls">
    </a>
-   <a href="https://github.com/sherifabdlnaby/bosun/network">
-      <img src="https://img.shields.io/github/forks/sherifabdlnaby/bosun.svg" alt="GitHub forks">
+    <a href="https://hub.docker.com/repository/docker/sherifabdlnaby/bosun">
+      <img src="https://badgen.net/docker/size/sherifabdlnaby/bosun?label=image%20size&icon=docker" alt="docker pulls">
+   </a>
+   <a href="https://goreportcard.com/report/github.com/sherifabdlnaby/bosun">
+      <img src="https://goreportcard.com/badge/github.com/sherifabdlnaby/bosun" alt="Go Report">
    </a>
    <a href="https://github.com/sherifabdlnaby/bosun/issues">
         <img src="https://img.shields.io/github/issues/sherifabdlnaby/bosun.svg" alt="GitHub issues">
    </a>
    <a href="https://raw.githubusercontent.com/sherifabdlnaby/bosun/blob/master/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="GitHub license">
+   </a>
+    <a>
+      <img src="https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat" alt="contributions welcome">
    </a>
 </p>
 
@@ -32,7 +38,7 @@ Bosun for Kibana is a curating tool that will automate tasks to make using Kiban
 In a dynamic environment where web services are created and deployed rapidly with all their logging infra set up, It is always annoying having to create Index Pattern *for each* service *manually* while everything else in the setup is automated.
 Bosun uses Kibana's client API's and Automate Index Pattern Discover.
 
-##### Example
+#### Example
 
 Say your indices has the following _convention_ for your apache access logs: `logs-apache-access-<service-name>-<date>` where `<service-name>` and `<date>` are dynamic based on the service and time.
 You can have `logs-apache-access-serviceX-2020-02-02` and `logs-apache-access-serviceY-2020-02-02` and you'll need to create index patterns `logs-apache-access-serviceX-*` and `logs-apache-access-serviceX-*` respectively to have them appear nicely in Kibana for developers.
@@ -48,16 +54,19 @@ Still under development.
 
 Still under development.
 
+> Currently tested on Kibana 7.0 and greater versions.
+
+
 # Installation
 
-#### Build
+## Build
 1. Install Go (for macOS `brew install go`)
 2. `make build`
 3. `./bin/bosun`
 
-#### Docker (Recommended)
+## Docker
 
-##### Docker Command
+#### Docker
 ```
 docker run  --env='BOSUN_KIBANA_HOST=https://kibana:5601' \
             --env='BOSUN_KIBANA_USER=elastic' \
@@ -106,14 +115,14 @@ autoIndexPattern:
             timeFieldName: "@timestamp"
 ```
 
-##### schedule:
+#### schedule:
 A [Cron Expression](https://crontab.guru/) that specify fixed schedule to run Auto Index Discovery & Creation.
 
-##### generalPatterns:
+#### generalPatterns:
 
 An array of General Pattern Objects, where `pattern` is the *general pattern* used to discover indices and `timeFieldName` is the time field that will be used for the created index pattern.
 
-##### How do General Pattern works ?
+### How do General Pattern works ?
 
 A general pattern should be general for both indices names and index patterns (applies to them both).  Unlike Kibana index pattern that can only contain wildcard `*`, general pattern has the `?` wildcard. It will be used to find indices that doesn't belong to any index pattern.
 
@@ -122,7 +131,7 @@ the next time Bosun run with general pattern `logs-apache-access-?-*`, it will a
 
 # License
 [MIT License](https://raw.githubusercontent.com/sherifabdlnaby/bosun/blob/master/LICENSE)
-Copyright (c) 2019 Sherif Abdel-Naby
+Copyright (c) 2020 Sherif Abdel-Naby
 
 # Contribution
 
