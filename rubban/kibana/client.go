@@ -14,6 +14,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/sherifabdlnaby/rubban/config"
 	"github.com/sherifabdlnaby/rubban/log"
+	"github.com/sherifabdlnaby/rubban/version"
 )
 
 //Client is a HTTP API Request wrapper.
@@ -35,6 +36,8 @@ type API interface {
 
 	BulkCreateIndexPattern(indexPattern []IndexPattern) error
 }
+
+//TODO GENERALIZE CLIENT
 
 //NewKibanaClient Constructor
 func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
@@ -75,6 +78,7 @@ func (c *Client) get(ctx context.Context, uri string) (*http.Response, error) {
 	}
 	req.Header.Set("kbn-xsrf", "true")
 	req.SetBasicAuth(c.username, c.password)
+	req.Header.Set("User-Agent", "Rubban/"+version.Version)
 	resp, err := c.http.Do(req)
 	if err != nil {
 		return nil, err
@@ -89,6 +93,7 @@ func (c *Client) post(uri string) (*http.Response, error) {
 	}
 	req.Header.Set("kbn-xsrf", "true")
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Rubban/"+version.Version)
 	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.http.Do(req)
 	if err != nil {
@@ -104,6 +109,7 @@ func (c *Client) postWithJSON(uri string, body []byte) (*http.Response, error) {
 	}
 	req.Header.Set("kbn-xsrf", "true")
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "Rubban/"+version.Version)
 	req.SetBasicAuth(c.username, c.password)
 	resp, err := c.http.Do(req)
 	if err != nil {
