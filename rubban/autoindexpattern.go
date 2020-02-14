@@ -35,7 +35,8 @@ type AutoIndexPattern struct {
 var replaceForPattern = strings.NewReplacer("?", "*")
 
 func replacerForRegex(s string) string {
-	s = strings.NewReplacer("*", "(.*)", "?", "(.*)").Replace(s)
+	s = regexp.QuoteMeta(s)
+	s = strings.NewReplacer("\\*", "(.*)", "\\?", "(.*)").Replace(s)
 	n := strings.Count(s, "(.*)")
 	s = strings.Replace(s, "(.*)", "(.*?)", n-1)
 	return s
@@ -146,10 +147,17 @@ func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPat
 	}
 
 	// Get Indices That Hasn't Matched ANY IndexPattern
-	//// Build regex
-	matchedIndicesRegx := regexp.MustCompile(strings.Join(patternsList, "|"))
 
-	//// Filter Indices
+	//// Build regex
+	var matchedIndicesRegx *regexp.Regexp
+
+	if len(patternsList) > 0 {
+		matchedIndicesRegx = regexp.MustCompile(strings.Join(patternsList, "|"))
+	}else{
+		// If no PatternList that means that the first time to encounter this pattern. So we won't match anything.
+		matchedIndicesRegx = regexp.MustCompile("$.")
+	}
+
 	unmatchedIndices := make([]string, 0)
 	for _, index := range indices {
 		if !matchedIndicesRegx.MatchString(index.Name) {
@@ -187,10 +195,10 @@ func getMatchGroups(pattern string) []int {
 	groups := make([]int, 0)
 	group := 1
 	for _, char := range pattern {
-		if char == 42 {
+		if char == 63 {
 			groups = append(groups, group)
 			group++
-		} else if char == 63 {
+		} else if char == 42 {
 			group++
 		}
 	}
