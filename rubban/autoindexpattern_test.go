@@ -1,9 +1,10 @@
 package rubban
 
 import (
+	"testing"
+
 	"github.com/sherifabdlnaby/rubban/config"
 	"github.com/sherifabdlnaby/rubban/rubban/kibana"
-	"testing"
 )
 
 type mockAPI struct {
