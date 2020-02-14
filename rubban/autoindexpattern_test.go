@@ -37,7 +37,7 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 	aip := NewAutoIndexPattern(config.AutoIndexPattern{
 		Enabled: true,
 		GeneralPatterns: []config.GeneralPattern{{
-			Pattern:       "*-?",
+			Pattern:       "?-*",
 			TimeFieldName: "@timestamp",
 		}},
 		Schedule: "* * * * *",
@@ -48,20 +48,29 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 		indexpatterns         []kibana.IndexPattern
 		expectedIndexPatterns []string
 	}{
+		// "test-*" already exists.
 		{
 			indices:               []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}, {Name: "test-2020.02.14"}},
-			indexpatterns:         []kibana.IndexPattern{{Title: "bb-*", TimeFieldName: "@timestamp"}},
+			indexpatterns:         []kibana.IndexPattern{{Title: "test-*", TimeFieldName: "@timestamp"}},
+			expectedIndexPatterns: []string{"foo-*"},
+		},
+		// "test-*" does not exist.
+		{
+			indices:               []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}, {Name: "test-2020.02.14"}},
+			indexpatterns:         []kibana.IndexPattern{},
 			expectedIndexPatterns: []string{"foo-*", "test-*"},
 		},
-		{
-			indices:               []kibana.Index{{Name: "foo-bar-aa-2020.02.14"}, {Name: ".kibana"}, {Name: "test-aa-bb-cc-2020.02.14"}},
-			indexpatterns:         []kibana.IndexPattern{{Title: "aa-*", TimeFieldName: "@timestamp"}},
-			expectedIndexPatterns: []string{"*-*"},
-		},
+		// negative test.
 		{
 			indices:               []kibana.Index{},
-			indexpatterns:         []kibana.IndexPattern{{Title: "aa-*", TimeFieldName: "@timestamp"}},
+			indexpatterns:         []kibana.IndexPattern{{Title: "*", TimeFieldName: "@timestamp"}},
 			expectedIndexPatterns: []string{},
+		},
+		// random gibberish that should not match most of the time besides the last one.
+		{
+			indices:               []kibana.Index{{Name: "fooaa2020.02.14"}, {Name: "-cool-index-"}, {Name: ".kibana"}, {Name: "test----aabcc2020.02.14"}},
+			indexpatterns:         []kibana.IndexPattern{},
+			expectedIndexPatterns: []string{"test-*"},
 		},
 	} {
 		m := newMockAPI(tcase.indices, tcase.indexpatterns)
@@ -69,6 +78,7 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 
 		computedIndexPatterns := make(indexPatternMap)
 		r.getIndexPattern(aip.GeneralPatterns[0], computedIndexPatterns)
+
 		if len(tcase.expectedIndexPatterns) == 0 && len(computedIndexPatterns) != 0 {
 			t.Fatalf("(%d) expected zero index patterns but got %d (%v)", i, len(computedIndexPatterns), computedIndexPatterns)
 		} else {
