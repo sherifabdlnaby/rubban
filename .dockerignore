@@ -9,7 +9,7 @@
 !version/
 !log/
 !config/
-!bosun/
+!rubban/
 !*.dist
 !pkg/
 !static/

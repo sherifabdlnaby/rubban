@@ -1,11 +1,11 @@
 version: "3"
 
 services:
-    bosun:
-        image: sherifabdlnaby/bosun:latest
+    rubban:
+        image: sherifabdlnaby/rubban:latest
         environment:
-            BOSUN_KIBANA_HOST: "kibana:5601"
-            BOSUN_KIBANA_USER: "elastic"
-            BOSUN_KIBANA_PASSWORD: "changeme"
-            BOSUN_AUTOINDEXPATTERN_SCHEDULE: '*/5 * * * *'
-            BOSUN_AUTOINDEXPATTERN_GENERALPATTERNS: '[{"pattern":"logs-apache-access-*-?","timeFieldName":"@timestamp"}]'
+            RUBBAN_KIBANA_HOST: "kibana:5601"
+            RUBBAN_KIBANA_USER: "elastic"
+            RUBBAN_KIBANA_PASSWORD: "changeme"
+            RUBBAN_AUTOINDEXPATTERN_SCHEDULE: '*/5 * * * *'
+            RUBBAN_AUTOINDEXPATTERN_GENERALPATTERNS: '[{"pattern":"logs-apache-access-*-?","timeFieldName":"@timestamp"}]'

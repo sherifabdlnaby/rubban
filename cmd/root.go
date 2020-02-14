@@ -4,22 +4,22 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sherifabdlnaby/bosun/bosun"
-	"github.com/sherifabdlnaby/bosun/version"
+	"github.com/sherifabdlnaby/rubban/rubban"
+	"github.com/sherifabdlnaby/rubban/version"
 	"github.com/spf13/cobra"
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "bosun",
-	Short: "Start bosun",
-	Long: `Start bosun according to configuration loaded from:
-	1- Environment Variables.	(ex: BOSUN_KIBANA_HOST=https://kibana:5601"
+	Use:   "rubban",
+	Short: "Start rubban",
+	Long: `Start rubban according to configuration loaded from:
+	1- Environment Variables.	(ex: RUBBAN_KIBANA_HOST=https://kibana:5601"
 	2- .env file.
-	3- bosun.(yaml|yml|json|toml)
+	3- rubban.(yaml|yml|json|toml)
 	(values from the earlier overwrite the latter).`,
 	Run: func(cmd *cobra.Command, args []string) {
-		bosun.Main()
+		rubban.Main()
 	},
 }
 

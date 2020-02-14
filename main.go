@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/sherifabdlnaby/bosun/cmd"
+	"github.com/sherifabdlnaby/rubban/cmd"
 )
 
 func main() {

@@ -16,7 +16,7 @@ linters-settings:
     golint:
         min-confidence: 0.8
     goimports:
-        local-prefixes: bosun
+        local-prefixes: rubban
 
 linters:
     disable-all: false

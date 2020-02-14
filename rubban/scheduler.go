@@ -1,4 +1,4 @@
-package bosun
+package rubban
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 	"github.com/robfig/cron/v3"
 )
 
-func (b *bosun) RegisterSchedulers() {
+func (b *rubban) RegisterSchedulers() {
 
 	// Starting Scheduler
 	defer b.scheduler.Start()

@@ -8,7 +8,7 @@ You can contribute in many ways:
 
 ### Report Bugs
 
-Report bugs at https://github.com/sherifabdlnaby/bosun/issues.
+Report bugs at https://github.com/sherifabdlnaby/rubban/issues.
 
 If you are reporting a bug, please include:
 
@@ -28,13 +28,13 @@ is open to whoever wants to implement it.
 
 ### Write Documentation
 
-bosun could always use more documentation, whether as part of the
-official bosun docs, in docstrings, or even on the web in blog posts,
+rubban could always use more documentation, whether as part of the
+official rubban docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 ### Submit Feedback
 
-The best way to send feedback is to file an issue at https://github.com/sherifabdlnaby/bosun/issues.
+The best way to send feedback is to file an issue at https://github.com/sherifabdlnaby/rubban/issues.
 
 If you are proposing a feature:
 
@@ -45,12 +45,12 @@ If you are proposing a feature:
 
 ## Get Started!
 
-Ready to contribute? Here's how to set up `bosun` for local development.
+Ready to contribute? Here's how to set up `rubban` for local development.
 
-1. Fork the `bosun` repo on GitHub.
+1. Fork the `rubban` repo on GitHub.
 2. Clone your fork locally::
 ```bash
-    $ git clone git@github.com:your_name_here/bosun.git
+    $ git clone git@github.com:your_name_here/rubban.git
 ```
 3. Create a branch for local development::
 ```bash

@@ -1,6 +1,6 @@
 package log
 
-import "github.com/sherifabdlnaby/bosun/config"
+import "github.com/sherifabdlnaby/rubban/config"
 
 // Logger defines a set of methods for writing application logs.
 type Logger interface {

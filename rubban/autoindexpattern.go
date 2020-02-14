@@ -1,4 +1,4 @@
-package bosun
+package rubban
 
 import (
 	"context"
@@ -10,9 +10,9 @@ import (
 
 	"github.com/dustin/go-humanize"
 	"github.com/robfig/cron/v3"
-	"github.com/sherifabdlnaby/bosun/bosun/kibana"
-	"github.com/sherifabdlnaby/bosun/config"
 	"github.com/sherifabdlnaby/gpool"
+	"github.com/sherifabdlnaby/rubban/config"
+	"github.com/sherifabdlnaby/rubban/rubban/kibana"
 )
 
 //GeneralPattern hold attributes for a GeneralPattern loaded from config.
@@ -86,7 +86,7 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 	}
 }
 
-func (b *bosun) RunAutoIndexPattern() {
+func (b *rubban) RunAutoIndexPattern() {
 
 	b.logger.Info("Running Auto Index Pattern...")
 	startTime := time.Now()
@@ -123,7 +123,7 @@ func (b *bosun) RunAutoIndexPattern() {
 	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
 }
 
-func (b *bosun) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns indexPatternMap) {
+func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns indexPatternMap) {
 	// Get Current IndexPattern Matching Given General Patterns
 	indexPatterns, err := b.api.IndexPatterns(generalPattern.Pattern)
 	if err != nil {

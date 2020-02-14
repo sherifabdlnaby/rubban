@@ -1,7 +1,7 @@
 package log
 
 import (
-	"github.com/sherifabdlnaby/bosun/config"
+	"github.com/sherifabdlnaby/rubban/config"
 	zaplogfmt "github.com/sykesm/zap-logfmt"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"

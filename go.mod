@@ -1,4 +1,4 @@
-module github.com/sherifabdlnaby/bosun
+module github.com/sherifabdlnaby/rubban
 
 go 1.13
 

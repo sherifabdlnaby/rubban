@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/sherifabdlnaby/bosun/config"
-	"github.com/sherifabdlnaby/bosun/log"
+	"github.com/sherifabdlnaby/rubban/config"
+	"github.com/sherifabdlnaby/rubban/log"
 )
 
 //Client is a HTTP API Request wrapper.
@@ -127,7 +127,12 @@ func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration
 		default:
 			if i != 0 {
 				c.logger.Infof("Retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i, retry)
-				time.Sleep(waitTime)
+				select {
+				case <-ctx.Done():
+					return ctx.Err()
+				case <-time.After(waitTime):
+
+				}
 			}
 
 			resp, err = c.get(ctx, pingAPIURL)

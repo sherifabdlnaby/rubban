@@ -1,4 +1,4 @@
-package bosun
+package rubban
 
 import (
 	"context"
@@ -11,12 +11,12 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/robfig/cron/v3"
-	"github.com/sherifabdlnaby/bosun/bosun/kibana"
-	"github.com/sherifabdlnaby/bosun/config"
-	"github.com/sherifabdlnaby/bosun/log"
+	"github.com/sherifabdlnaby/rubban/config"
+	"github.com/sherifabdlnaby/rubban/log"
+	"github.com/sherifabdlnaby/rubban/rubban/kibana"
 )
 
-type bosun struct {
+type rubban struct {
 	config           *config.Config
 	logger           log.Logger
 	client           *kibana.Client
@@ -30,35 +30,35 @@ type bosun struct {
 func Main() {
 
 	// Create App
-	bosun := bosun{}
+	rubban := rubban{}
 
 	mainCtx, cancel := context.WithCancel(context.Background())
 
 	shutdownSignal := make(chan struct{})
 	go func() {
-		bosun.terminateOnSignal(cancel)
+		rubban.terminateOnSignal(cancel)
 		shutdownSignal <- struct{}{}
 	}()
 
-	err := bosun.Initialize(mainCtx)
+	err := rubban.Initialize(mainCtx)
 	if err != nil {
-		panic("Failed to Initialize bosun. Error: " + err.Error())
+		panic("Failed to Initialize rubban. Error: " + err.Error())
 	}
 
 	// Register Scheduler
-	bosun.RegisterSchedulers()
+	rubban.RegisterSchedulers()
 
 	// Wait to Shutdown
 	<-shutdownSignal
 
 	// Sync Logger and Close.
-	_ = bosun.logger.Sync()
-	bosun.logger.Infof("Goodbye. <3")
+	_ = rubban.logger.Sync()
+	rubban.logger.Infof("Goodbye. <3")
 
 	os.Exit(0)
 }
 
-func (b *bosun) Initialize(ctx context.Context) error {
+func (b *rubban) Initialize(ctx context.Context) error {
 
 	var err error
 
@@ -66,15 +66,15 @@ func (b *bosun) Initialize(ctx context.Context) error {
 	logger := log.Default()
 
 	// Load config
-	b.config, err = config.Load("bosun")
+	b.config, err = config.Load("rubban")
 	if err != nil {
 		logger.Fatalw("Failed to load configuration.", "error", err)
 		os.Exit(1)
 	}
 
 	// Init logger
-	b.logger = log.NewZapLoggerImpl("bosun", b.config.Logging)
-	b.logger.Info("Starting bosun...")
+	b.logger = log.NewZapLoggerImpl("rubban", b.config.Logging)
+	b.logger.Info("Starting rubban...")
 
 	// Init scheduler
 	b.scheduler = cron.New()
@@ -90,7 +90,7 @@ func (b *bosun) Initialize(ctx context.Context) error {
 	// Validate Connection
 	if err = b.client.Validate(ctx, 5, 10*time.Second); err != nil {
 		err = fmt.Errorf("couldn't validate connection to Kibana API")
-		b.logger.Fatal("Cannot Initialize bosun without an Initial Connection to Kibana API")
+		b.logger.Fatal("Cannot Initialize rubban without an Initial Connection to Kibana API")
 		return err
 	}
 	b.logger.Info("Validated Initial Connection to Kibana API")
@@ -105,7 +105,7 @@ func (b *bosun) Initialize(ctx context.Context) error {
 	b.logger.Infow(fmt.Sprintf("Determined Kibana Version: %s", b.semVer.String()))
 
 	// Determine API
-	// TODO for now bosun only support API V7
+	// TODO for now rubban only support API V7
 	b.api = kibana.NewAPIVer7(b.client)
 
 	// Init RunAutoIndexPattern
@@ -117,7 +117,7 @@ func (b *bosun) Initialize(ctx context.Context) error {
 	return nil
 }
 
-func (b *bosun) terminateOnSignal(cancel context.CancelFunc) {
+func (b *rubban) terminateOnSignal(cancel context.CancelFunc) {
 
 	// Signal Channels
 	signalChan := make(chan os.Signal, 1)

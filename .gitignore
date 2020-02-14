@@ -2,7 +2,7 @@
 bin
 vendor
 .env
-bosun.yml
+rubban.yml
 
 ### JetBrains template
 # User-specific stuff
