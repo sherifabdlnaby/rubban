@@ -35,7 +35,7 @@ func newMockAPI(indices []kibana.Index, indexpatterns []kibana.IndexPattern) kib
 func TestAutoindexPatternMatchers(t *testing.T) {
 	aip := NewAutoIndexPattern(config.AutoIndexPattern{
 		Enabled: true,
-		GeneralPatterns: []config.GeneralPattern{config.GeneralPattern{
+		GeneralPatterns: []config.GeneralPattern{{
 			Pattern:       "*-?",
 			TimeFieldName: "@timestamp",
 		}},
@@ -47,12 +47,12 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 		indexpatterns []kibana.IndexPattern
 	}{
 		{
-			indices:       []kibana.Index{kibana.Index{Name: "foo-bar-aa-2020.02.14"}, kibana.Index{Name: "foo-qux-aa-2020.02.14"}},
-			indexpatterns: []kibana.IndexPattern{kibana.IndexPattern{Title: "test-*", TimeFieldName: "@timestamp"}},
+			indices:       []kibana.Index{{Name: "foo-bar-aa-2020.02.14"}, {Name: "foo-qux-aa-2020.02.14"}},
+			indexpatterns: []kibana.IndexPattern{{Title: "test-*", TimeFieldName: "@timestamp"}},
 		},
 		{
-			indices:       []kibana.Index{kibana.Index{Name: "foo-bar-2020.02.14"}, kibana.Index{Name: "foo-qux-2020.02.14"}},
-			indexpatterns: []kibana.IndexPattern{kibana.IndexPattern{Title: "test-*", TimeFieldName: "@timestamp"}},
+			indices:       []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}},
+			indexpatterns: []kibana.IndexPattern{{Title: "test-*", TimeFieldName: "@timestamp"}},
 		},
 	} {
 		m := newMockAPI(tcase.indices, tcase.indexpatterns)
