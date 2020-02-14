@@ -43,27 +43,41 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 		Schedule: "* * * * *",
 	})
 
-	for _, tcase := range []struct {
-		indices       []kibana.Index
-		indexpatterns []kibana.IndexPattern
+	for i, tcase := range []struct {
+		indices               []kibana.Index
+		indexpatterns         []kibana.IndexPattern
+		expectedIndexPatterns []string
 	}{
 		{
-			indices:       []kibana.Index{{Name: "foo-bar-aa-2020.02.14"}, {Name: "foo-qux-aa-2020.02.14"}},
-			indexpatterns: []kibana.IndexPattern{{Title: "test-*", TimeFieldName: "@timestamp"}},
+			indices:               []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}, {Name: "test-2020.02.14"}},
+			indexpatterns:         []kibana.IndexPattern{{Title: "bb-*", TimeFieldName: "@timestamp"}},
+			expectedIndexPatterns: []string{"foo-*", "test-*"},
 		},
 		{
-			indices:       []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}},
-			indexpatterns: []kibana.IndexPattern{{Title: "test-*", TimeFieldName: "@timestamp"}},
+			indices:               []kibana.Index{{Name: "foo-bar-aa-2020.02.14"}, {Name: ".kibana"}, {Name: "test-aa-bb-cc-2020.02.14"}},
+			indexpatterns:         []kibana.IndexPattern{{Title: "aa-*", TimeFieldName: "@timestamp"}},
+			expectedIndexPatterns: []string{"*-*"},
+		},
+		{
+			indices:               []kibana.Index{},
+			indexpatterns:         []kibana.IndexPattern{{Title: "aa-*", TimeFieldName: "@timestamp"}},
+			expectedIndexPatterns: []string{},
 		},
 	} {
 		m := newMockAPI(tcase.indices, tcase.indexpatterns)
 		r := rubban{api: m}
+
 		computedIndexPatterns := make(indexPatternMap)
 		r.getIndexPattern(aip.GeneralPatterns[0], computedIndexPatterns)
-
-		_, ok := computedIndexPatterns["foo-*"]
-		if !ok {
-			t.Fatal("failed to find index pattern foo-*")
+		if len(tcase.expectedIndexPatterns) == 0 && len(computedIndexPatterns) != 0 {
+			t.Fatalf("(%d) expected zero index patterns but got %d (%v)", i, len(computedIndexPatterns), computedIndexPatterns)
+		} else {
+			for _, e := range tcase.expectedIndexPatterns {
+				_, ok := computedIndexPatterns[e]
+				if !ok {
+					t.Fatalf("(%d) failed to find index pattern %s", i, e)
+				}
+			}
 		}
 	}
 }
