@@ -153,7 +153,7 @@ func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPat
 
 	if len(patternsList) > 0 {
 		matchedIndicesRegx = regexp.MustCompile(strings.Join(patternsList, "|"))
-	}else{
+	} else {
 		// If no PatternList that means that the first time to encounter this pattern. So we won't match anything.
 		matchedIndicesRegx = regexp.MustCompile("$.")
 	}
@@ -195,10 +195,10 @@ func getMatchGroups(pattern string) []int {
 	groups := make([]int, 0)
 	group := 1
 	for _, char := range pattern {
-		if char == 63 {
+		if char == '?' {
 			groups = append(groups, group)
 			group++
-		} else if char == 42 {
+		} else if char == '*' {
 			group++
 		}
 	}
