@@ -34,45 +34,57 @@ func newMockAPI(indices []kibana.Index, indexpatterns []kibana.IndexPattern) kib
 
 // TestAutoindexPatternMatchers tests how the matchers work.
 func TestAutoindexPatternMatchers(t *testing.T) {
-	aip := NewAutoIndexPattern(config.AutoIndexPattern{
-		Enabled: true,
-		GeneralPatterns: []config.GeneralPattern{{
-			Pattern:       "?-*",
-			TimeFieldName: "@timestamp",
-		}},
-		Schedule: "* * * * *",
-	})
-
 	for i, tcase := range []struct {
+		generalPattern        string
 		indices               []kibana.Index
 		indexpatterns         []kibana.IndexPattern
 		expectedIndexPatterns []string
 	}{
 		// "test-*" already exists.
 		{
+			generalPattern:        "?-*",
 			indices:               []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}, {Name: "test-2020.02.14"}},
 			indexpatterns:         []kibana.IndexPattern{{Title: "test-*", TimeFieldName: "@timestamp"}},
 			expectedIndexPatterns: []string{"foo-*"},
 		},
 		// "test-*" does not exist.
 		{
+			generalPattern:        "?-*",
 			indices:               []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-qux-2020.02.14"}, {Name: "test-2020.02.14"}},
 			indexpatterns:         []kibana.IndexPattern{},
 			expectedIndexPatterns: []string{"foo-*", "test-*"},
 		},
 		// negative test.
 		{
+			generalPattern:        "?-*",
 			indices:               []kibana.Index{},
 			indexpatterns:         []kibana.IndexPattern{{Title: "*", TimeFieldName: "@timestamp"}},
 			expectedIndexPatterns: []string{},
 		},
 		// random gibberish that should not match most of the time besides the last one.
 		{
+			generalPattern:        "?-*",
 			indices:               []kibana.Index{{Name: "fooaa2020.02.14"}, {Name: "-cool-index-"}, {Name: ".kibana"}, {Name: "test----aabcc2020.02.14"}},
 			indexpatterns:         []kibana.IndexPattern{},
 			expectedIndexPatterns: []string{"test-*"},
 		},
+		// multiple matcher test.
+		{
+			generalPattern:        "?-?-*",
+			indices:               []kibana.Index{{Name: "foo-bar-2020.02.14"}, {Name: "foo-baz-2020.02.14"}},
+			indexpatterns:         []kibana.IndexPattern{},
+			expectedIndexPatterns: []string{"foo-bar-*", "foo-qux-*"},
+		},
 	} {
+		aip := NewAutoIndexPattern(config.AutoIndexPattern{
+			Enabled: true,
+			GeneralPatterns: []config.GeneralPattern{{
+				Pattern:       tcase.generalPattern,
+				TimeFieldName: "@timestamp",
+			}},
+			Schedule: "* * * * *",
+		})
+
 		m := newMockAPI(tcase.indices, tcase.indexpatterns)
 		r := rubban{api: m}
 
@@ -85,7 +97,7 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 			for _, e := range tcase.expectedIndexPatterns {
 				_, ok := computedIndexPatterns[e]
 				if !ok {
-					t.Fatalf("(%d) failed to find index pattern %s", i, e)
+					t.Fatalf("(%d) failed to find index pattern %s (%v)", i, e, computedIndexPatterns)
 				}
 			}
 		}
