@@ -64,10 +64,10 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 		},
 		{
 			generalPattern:        "?-*",
-			indices:               []kibana.Index{{Name: "fooaa2020.02.14"}, {Name: "-cool-index-"}, {Name: ".kibana"}, {Name: "test----aabcc2020.02.14"}},
+			indices:               []kibana.Index{{Name: "-cool-index-"}, {Name: ".kibana"}, {Name: "test----aabcc2020.02.14"}},
 			indexpatterns:         []kibana.IndexPattern{},
-			expectedIndexPatterns: []string{"test-*"},
-			tcaseName:             `random gibberish that should not match most of the time besides the last one`,
+			expectedIndexPatterns: []string{"test-*", "-*", "*-*"},
+			tcaseName:             `random gibberish that should not match most of the time besides two`,
 		},
 		{
 			generalPattern:        "?-?-*",
