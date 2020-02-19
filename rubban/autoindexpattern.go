@@ -177,15 +177,21 @@ func buildIndexPattern(generalPattern GeneralPattern, unmatchedIndex string) str
 	newIndexPattern := generalPattern.Pattern
 	/// Start from 1 to escape first match group which is the whole string.
 	for i := 1; i < len(matchGroups); i++ {
+		var match bool
 		for _, matchGroup := range generalPattern.matchGroups {
 			if matchGroup == i {
-				// This is a match Group
-				newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
-			} else {
-				// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
-				newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
+				match = true
 			}
 		}
+
+		if match {
+			// This is a match Group
+			newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
+		} else {
+			// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
+			newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
+		}
+
 	}
 	newIndexPattern = strings.Replace(newIndexPattern, "?", "*", -1)
 	return newIndexPattern
