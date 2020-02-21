@@ -8,8 +8,8 @@ import (
 )
 
 type zapLogger struct {
-	debug bool
-	l     *zap.SugaredLogger
+	doExtend bool
+	l        *zap.SugaredLogger
 }
 
 //NewZapLoggerImpl Return Zap Instance
@@ -62,11 +62,11 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 		panic(err)
 	}
 
-	return &zapLogger{l: logger.Sugar().Named(name), debug: config.Debug}
+	return &zapLogger{l: logger.Sugar().Named(name), doExtend: config.Format == json}
 }
 
 func (z *zapLogger) Extend(name string) Logger {
-	if z.debug {
+	if !z.doExtend {
 		return &zapLogger{l: z.l.Named(name)}
 	}
 	return &zapLogger{l: z.l}
