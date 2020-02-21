@@ -6,4 +6,6 @@
 
 ## Contributors
 
+- Giedrius Statkevičius [GiedriusS](https://github.com/GiedriusS)
+
 None yet. Why not be the first?
