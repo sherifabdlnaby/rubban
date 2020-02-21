@@ -16,7 +16,7 @@
       <img src="https://badgen.net/docker/size/sherifabdlnaby/rubban?label=image%20size&icon=docker&t=1" alt="docker size">
    </a>
     <a href="https://hub.docker.com/repository/docker/sherifabdlnaby/rubban">
-      <img src="https://badgen.net/docker/pulls/sherifabdlnaby/rubban?label=docker%20pulls&icon=docker&t=1" alt="docker pulls">
+      <img src="https://img.shields.io/docker/pulls/sherifabdlnaby/rubban?logo=docker" alt="docker pulls">
    </a>
    <a href="https://goreportcard.com/report/github.com/sherifabdlnaby/rubban">
       <img src="https://goreportcard.com/badge/github.com/sherifabdlnaby/rubban" alt="Go Report">
