@@ -10,7 +10,7 @@
       <img src="https://img.shields.io/github/v/tag/sherifabdlnaby/rubban?label=release&amp;sort=semver">
     </a>
      <a>
-      <img src="https://github.com/sherifabdlnaby/rubban/workflows/Test/badge.svg">
+      <img src="https://github.com/sherifabdlnaby/rubban/workflows/Build/badge.svg">
     </a>
    <a href="https://hub.docker.com/repository/docker/sherifabdlnaby/rubban">
       <img src="https://badgen.net/docker/size/sherifabdlnaby/rubban?label=image%20size&icon=docker&t=1" alt="docker size">
