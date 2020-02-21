@@ -17,8 +17,8 @@ import (
 	"github.com/sherifabdlnaby/rubban/version"
 )
 
-//client is a HTTP API Request wrapper.
-type client struct {
+//Client is a HTTP API Request wrapper.
+type Client struct {
 	baseURL  *url.URL
 	username string
 	password string
@@ -27,7 +27,7 @@ type client struct {
 }
 
 //NewKibanaClient Constructor
-func NewKibanaClient(config config.Kibana, logger log.Logger) (*client, error) {
+func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 	//// Add Scheme if doesn't exist (default to HTTP)
 	rawURL := config.Host
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
@@ -40,11 +40,12 @@ func NewKibanaClient(config config.Kibana, logger log.Logger) (*client, error) {
 		return nil, err
 	}
 
-	return &client{
+	return &Client{
 		baseURL:  baseURL,
 		username: config.User,
 		password: config.Password,
 		http: &http.Client{
+			/* #nosec */
 			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
 			Timeout:   10 * time.Second,
 		},
@@ -52,12 +53,12 @@ func NewKibanaClient(config config.Kibana, logger log.Logger) (*client, error) {
 	}, nil
 }
 
-func (c *client) getUrlFromPath(path string) string {
+func (c *Client) getURLFromPath(path string) string {
 	return c.baseURL.String() + path
 }
 
-func (c *client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, method, c.getUrlFromPath(path), body)
+func (c *Client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, c.getURLFromPath(path), body)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +75,8 @@ func (c *client) newRequest(ctx context.Context, method string, path string, bod
 	return req, nil
 }
 
-func (c *client) get(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+//Get Perform a GET Request to Kibana
+func (c *Client) Get(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
 	req, err := c.newRequest(ctx, "GET", path, body)
 	if err != nil {
 		return nil, err
@@ -82,7 +84,8 @@ func (c *client) get(ctx context.Context, path string, body io.Reader) (*http.Re
 	return c.http.Do(req)
 }
 
-func (c *client) post(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+//Post Perform a POST Request to Kibana
+func (c *Client) Post(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
 	req, err := c.newRequest(ctx, "POST", path, body)
 	if err != nil {
 		return nil, err
@@ -90,13 +93,13 @@ func (c *client) post(ctx context.Context, path string, body io.Reader) (*http.R
 	return c.http.Do(req)
 }
 
-//validate validate connection to Kibana by pinging /status api.
-func (c *client) validate(ctx context.Context, retry int, waitTime time.Duration) error {
+//Validate Validate connection to Kibana by pinging /status api.
+func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error
 	var resp *http.Response
 	var pingPath = "/api/status"
 
-	c.logger.Infof("Testing connection to Kibana API at %s", c.getUrlFromPath(pingPath))
+	c.logger.Infof("Testing connection to Kibana API at %s", c.getURLFromPath(pingPath))
 
 	for i := 0; i < retry+1; i++ {
 		if i != 0 {
@@ -109,26 +112,26 @@ func (c *client) validate(ctx context.Context, retry int, waitTime time.Duration
 			}
 		}
 
-		resp, err = c.get(ctx, pingPath, nil)
+		resp, err = c.Get(ctx, pingPath, nil)
 		if err == nil {
 			_ = resp.Body.Close()
 			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-				c.logger.Infof("Successfully connected to Kibana API %s", c.getUrlFromPath(pingPath))
+				c.logger.Infof("Successfully connected to Kibana API %s", c.getURLFromPath(pingPath))
 				return nil
 			}
 			err = fmt.Errorf("%s", resp.Status)
 		}
 
-		c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getUrlFromPath(pingPath)), "error", err.Error())
+		c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getURLFromPath(pingPath)), "error", err.Error())
 	}
 	return err
 }
 
-//guessVersion Get Kibana Version (Will use different methods to determine API version)
-func (c *client) guessVersion(ctx context.Context) (semver.Version, error) {
+//GuessVersion Get Kibana Version (Will use different methods to determine API version)
+func (c *Client) GuessVersion(ctx context.Context) (semver.Version, error) {
 
 	// 1
-	resp, err := c.get(ctx, "/api/status", nil)
+	resp, err := c.Get(ctx, "/api/status", nil)
 	if err != nil {
 		return semver.Version{}, err
 	}

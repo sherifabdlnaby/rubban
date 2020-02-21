@@ -1,4 +1,4 @@
-package autoIndexPattern
+package autoindexpattern
 
 import (
 	"context"
@@ -102,10 +102,8 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 			Schedule: "* * * * *",
 		}, newMockAPI(tcase.indices, tcase.indexpatterns), log.Default())
 
-
 		///
 		result := autoIdxPttrn.getIndexPattern(context.Background(), autoIdxPttrn.GeneralPatterns[0])
-
 
 		t.Run(tcase.tcaseName, func(t *testing.T) {
 			if len(tcase.expectedIndexPatterns) == 0 && len(result) != 0 {

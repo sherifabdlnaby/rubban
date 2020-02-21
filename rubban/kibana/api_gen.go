@@ -9,15 +9,15 @@ import (
 	"github.com/sherifabdlnaby/rubban/log"
 )
 
-//APIVer7 Implements API Calls compatible with Kibana 7^
+//APIGen Implements API Calls compatible with Kibana 7^
 type APIGen struct {
-	*client
-	log log.Logger
+	client *Client
+	log    log.Logger
 }
 
-//NewAPIVer7 Constructor
+//NewAPIGen Constructor
 func NewAPIGen(config config.Kibana, log log.Logger) (*APIGen, error) {
-	client, err := NewKibanaClient(config, log.Extend("client"))
+	client, err := NewKibanaClient(config, log.Extend("Client"))
 	if err != nil {
 		return &APIGen{}, err
 	}
@@ -28,26 +28,32 @@ func NewAPIGen(config config.Kibana, log log.Logger) (*APIGen, error) {
 	}, nil
 }
 
+//Validate Validate connection to Kibana
 func (a *APIGen) Validate(ctx context.Context) error {
-	return a.validate(ctx, 5, 10*time.Second)
+	return a.client.Validate(ctx, 5, 10*time.Second)
 }
 
+//GuessVersion Try to Guess Current Kibana API version
 func (a *APIGen) GuessVersion(ctx context.Context) (semver.Version, error) {
-	return a.guessVersion(ctx)
+	return a.GuessVersion(ctx)
 }
 
+//Info Return Kibana Info
 func (a *APIGen) Info(ctx context.Context) (Info, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
+//Indices Get Indices match supported filter (support wildcards)
 func (a *APIGen) Indices(ctx context.Context, filter string) ([]Index, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
+//IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
 func (a *APIGen) IndexPatterns(ctx context.Context, filter string) ([]IndexPattern, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
+//BulkCreateIndexPattern Add Index Patterns to Kibana
 func (a *APIGen) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error {
 	panic("Should Not Be Called from Gen Pattern.")
 }

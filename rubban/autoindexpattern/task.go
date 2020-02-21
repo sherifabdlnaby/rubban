@@ -1,4 +1,4 @@
-package autoIndexPattern
+package autoindexpattern
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/sherifabdlnaby/rubban/rubban/kibana"
 )
 
+//Run Run Auto Index Pattern creation task
 func (a *AutoIndexPattern) Run(ctx context.Context) {
 	//// Set for Found Patterns ( a set datastructes using Map )
 	newIndexPatterns := make(map[string]kibana.IndexPattern)
@@ -39,9 +40,9 @@ func (a *AutoIndexPattern) Run(ctx context.Context) {
 
 	a.log.Infow(fmt.Sprintf("Successfully created %d Index Patterns.", len(newIndexPatterns)), "Index Patterns", newIndexPatterns)
 
-	return
 }
 
+//Name Return Task Name
 func (a *AutoIndexPattern) Name() string {
 	return a.name
 }

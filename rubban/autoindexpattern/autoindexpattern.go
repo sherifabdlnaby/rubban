@@ -1,4 +1,4 @@
-package autoIndexPattern
+package autoindexpattern
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func NewAutoIndexPattern(config config.AutoIndexPattern, kibana kibana.API, log 
 		name:            "Auto Index Pattern",
 		GeneralPatterns: generalPattern,
 		kibana:          kibana,
-		log: log,
+		log:             log,
 	}
 }
 

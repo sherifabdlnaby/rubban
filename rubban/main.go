@@ -6,7 +6,6 @@ import (
 	"syscall"
 )
 
-
 // Main is the main function of the application, it will be run by cobra's root command.
 func Main() {
 
@@ -24,7 +23,6 @@ func Main() {
 	err := rubban.Initialize()
 	if err != nil {
 		panic("Failed to Initialize Rubban. Error: " + err.Error())
-		return
 	}
 
 	// Start

@@ -12,13 +12,13 @@ import (
 
 //APIVer7 Implements API Calls compatible with Kibana 7^
 type APIVer7 struct {
-	client *client
+	client *Client
 	log    log.Logger
 }
 
 //NewAPIVer7 Constructor
 func NewAPIVer7(config config.Kibana, log log.Logger) (*APIVer7, error) {
-	client, err := NewKibanaClient(config, log.Extend("client"))
+	client, err := NewKibanaClient(config, log.Extend("Client"))
 	if err != nil {
 		return &APIVer7{}, err
 	}
@@ -31,7 +31,7 @@ func NewAPIVer7(config config.Kibana, log log.Logger) (*APIVer7, error) {
 
 //Info Return Kibana Info
 func (a *APIVer7) Info(ctx context.Context) (Info, error) {
-	resp, err := a.client.get(ctx, "/api/status", nil)
+	resp, err := a.client.Get(ctx, "/api/status", nil)
 	if err != nil {
 		return Info{}, err
 	}
@@ -51,7 +51,7 @@ func (a *APIVer7) Info(ctx context.Context) (Info, error) {
 //Indices Get Indices match supported filter (support wildcards)
 func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 	indices := make([]Index, 0)
-	resp, err := a.client.post(ctx, fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter), nil)
+	resp, err := a.client.Post(ctx, fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter), nil)
 	if err != nil {
 		return indices, err
 	}
@@ -113,7 +113,7 @@ func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern map[s
 	}
 
 	// Send Request
-	resp, err := a.client.post(ctx, "/api/saved_objects/_bulk_create", bytes.NewReader(buff))
+	resp, err := a.client.Post(ctx, "/api/saved_objects/_bulk_create", bytes.NewReader(buff))
 	if err != nil {
 		return fmt.Errorf("failed to bulk create saved objects, error: %s", err.Error())
 	}
@@ -130,7 +130,7 @@ func (a *APIVer7) indexPatternPage(ctx context.Context, filter string, page int)
 
 	indexPatterns := make([]IndexPattern, 0)
 	indexPatternPage := IndexPatternPage{}
-	resp, err := a.client.get(ctx, fmt.Sprintf("/api/saved_objects/_find?fields=title&fields=timeFieldName&per_page=1&search=\"%s\"&search_fields=title&type=index-pattern&page=%d", filter, page), nil)
+	resp, err := a.client.Get(ctx, fmt.Sprintf("/api/saved_objects/_find?fields=title&fields=timeFieldName&per_page=1&search=\"%s\"&search_fields=title&type=index-pattern&page=%d", filter, page), nil)
 	if err != nil {
 		return indexPatterns, 0, err
 	}

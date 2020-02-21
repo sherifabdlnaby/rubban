@@ -6,6 +6,8 @@ import (
 	"runtime"
 )
 
+// nolint: gochecknoglobals
+
 // GitCommit returns the git commit that was compiled. This will be filled in by the compiler.
 var GitCommit string
 

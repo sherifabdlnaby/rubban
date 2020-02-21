@@ -9,7 +9,7 @@ import (
 
 type zapLogger struct {
 	debug bool
-	l *zap.SugaredLogger
+	l     *zap.SugaredLogger
 }
 
 //NewZapLoggerImpl Return Zap Instance
@@ -66,11 +66,10 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 }
 
 func (z *zapLogger) Extend(name string) Logger {
-	if z.debug{
+	if z.debug {
 		return &zapLogger{l: z.l.Named(name)}
-	}else{
-		return &zapLogger{l: z.l}
 	}
+	return &zapLogger{l: z.l}
 }
 
 func (z *zapLogger) Debug(args ...interface{}) {

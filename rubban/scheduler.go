@@ -7,35 +7,33 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/robfig/cron/v3"
 	"github.com/sherifabdlnaby/rubban/log"
-
 )
 
-
-type Scheduler struct {
-	scheduler cron.Cron
-	logger    log.Logger
-	context   context.Context
+type scheduler struct {
+	scheduler  cron.Cron
+	logger     log.Logger
+	context    context.Context
 	specParser cron.Parser
-	tasks		[]task
+	tasks      []task
 }
 
 type task struct {
-	Name string
+	Name  string
 	Entry cron.Entry
 }
 
-func NewScheduler(ctx context.Context, logger log.Logger) *Scheduler {
-	return &Scheduler{
-		scheduler: *cron.New(),
-		context:   ctx,
-		logger:    logger,
-		specParser:  cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor),
-		tasks: make([]task,0),
+func newScheduler(ctx context.Context, logger log.Logger) *scheduler {
+	return &scheduler{
+		scheduler:  *cron.New(),
+		context:    ctx,
+		logger:     logger,
+		specParser: cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor),
+		tasks:      make([]task, 0),
 	}
 }
 
-func (s *Scheduler) Start() {
-	s.logger.Infof("Starting Scheduler...")
+func (s *scheduler) Start() {
+	s.logger.Infof("Starting scheduler...")
 
 	s.scheduler.Start()
 
@@ -46,7 +44,7 @@ func (s *Scheduler) Start() {
 	}
 }
 
-func (s *Scheduler) Stop() {
+func (s *scheduler) Stop() {
 	ctx := s.scheduler.Stop()
 
 	// Wait for Running Jobs to finish.
@@ -59,7 +57,7 @@ func (s *Scheduler) Stop() {
 	}
 }
 
-func (s *Scheduler) Register(spec string, job Task) error {
+func (s *scheduler) Register(spec string, job Task) error {
 
 	schedule, err := s.specParser.Parse(spec)
 	if err != nil {
