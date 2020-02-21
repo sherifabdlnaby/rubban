@@ -1,35 +1,37 @@
-package rubban
+package autoIndexPattern
 
 import (
+	"context"
 	"testing"
 
 	"github.com/sherifabdlnaby/rubban/config"
+	"github.com/sherifabdlnaby/rubban/log"
 	"github.com/sherifabdlnaby/rubban/rubban/kibana"
 )
 
 type mockAPI struct {
 	indices       []kibana.Index
-	indexpatterns []kibana.IndexPattern
+	indexPatterns []kibana.IndexPattern
 }
 
-func (m *mockAPI) Info() (kibana.Info, error) {
-	return kibana.Info{}, nil
+func (m *mockAPI) Info(ctx context.Context) (kibana.Info, error) {
+	panic("implement me")
 }
 
-func (m *mockAPI) BulkCreateIndexPattern(indexPattern []kibana.IndexPattern) error {
-	return nil
-}
-
-func (m *mockAPI) Indices(filter string) ([]kibana.Index, error) {
+func (m *mockAPI) Indices(ctx context.Context, filter string) ([]kibana.Index, error) {
 	return m.indices, nil
 }
 
-func (m *mockAPI) IndexPatterns(filter string) ([]kibana.IndexPattern, error) {
-	return m.indexpatterns, nil
+func (m *mockAPI) IndexPatterns(ctx context.Context, filter string) ([]kibana.IndexPattern, error) {
+	return m.indexPatterns, nil
 }
 
-func newMockAPI(indices []kibana.Index, indexpatterns []kibana.IndexPattern) kibana.API {
-	return &mockAPI{indices: indices, indexpatterns: indexpatterns}
+func (m *mockAPI) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]kibana.IndexPattern) error {
+	panic("implement me")
+}
+
+func newMockAPI(indices []kibana.Index, indexPatterns []kibana.IndexPattern) kibana.API {
+	return &mockAPI{indices: indices, indexPatterns: indexPatterns}
 }
 
 // TestAutoindexPatternMatchers tests how the matchers work.
@@ -91,32 +93,31 @@ func TestAutoindexPatternMatchers(t *testing.T) {
 			tcaseName:             `multiple matcher and matching eagerly vs. lazily test`,
 		},
 	} {
-		aip := NewAutoIndexPattern(config.AutoIndexPattern{
+		autoIdxPttrn := NewAutoIndexPattern(config.AutoIndexPattern{
 			Enabled: true,
 			GeneralPatterns: []config.GeneralPattern{{
 				Pattern:       tcase.generalPattern,
 				TimeFieldName: "@timestamp",
 			}},
 			Schedule: "* * * * *",
-		})
+		}, newMockAPI(tcase.indices, tcase.indexpatterns), log.Default())
 
-		m := newMockAPI(tcase.indices, tcase.indexpatterns)
-		r := rubban{api: m}
 
-		computedIndexPatterns := make(indexPatternMap)
-		r.getIndexPattern(aip.GeneralPatterns[0], computedIndexPatterns)
+		///
+		result := autoIdxPttrn.getIndexPattern(context.Background(), autoIdxPttrn.GeneralPatterns[0])
+
 
 		t.Run(tcase.tcaseName, func(t *testing.T) {
-			if len(tcase.expectedIndexPatterns) == 0 && len(computedIndexPatterns) != 0 {
-				t.Fatalf("expected zero index patterns but got %d (%v)", len(computedIndexPatterns), computedIndexPatterns)
+			if len(tcase.expectedIndexPatterns) == 0 && len(result) != 0 {
+				t.Fatalf("expected zero index patterns but got %d (%v)", len(result), result)
 			} else {
-				if len(tcase.expectedIndexPatterns) != len(computedIndexPatterns) {
-					t.Fatalf("expected %d index patterns but got %d (%v)", len(tcase.expectedIndexPatterns), len(computedIndexPatterns), computedIndexPatterns)
+				if len(tcase.expectedIndexPatterns) != len(result) {
+					t.Fatalf("expected %d index patterns but got %d (%v)", len(tcase.expectedIndexPatterns), len(result), result)
 				}
 				for _, e := range tcase.expectedIndexPatterns {
-					_, ok := computedIndexPatterns[e]
+					_, ok := result[e]
 					if !ok {
-						t.Fatalf("failed to find index pattern %s (%v)", e, computedIndexPatterns)
+						t.Fatalf("failed to find index pattern %s (%v)", e, result)
 					}
 				}
 			}
