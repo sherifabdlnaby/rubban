@@ -153,7 +153,7 @@ func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPat
 
 	if len(patternsList) > 0 {
 		matchedIndicesRegx = regexp.MustCompile(strings.Join(patternsList, "|"))
-	}else{
+	} else {
 		// If no PatternList that means that the first time to encounter this pattern. So we won't match anything.
 		matchedIndicesRegx = regexp.MustCompile("$.")
 	}
@@ -177,15 +177,21 @@ func buildIndexPattern(generalPattern GeneralPattern, unmatchedIndex string) str
 	newIndexPattern := generalPattern.Pattern
 	/// Start from 1 to escape first match group which is the whole string.
 	for i := 1; i < len(matchGroups); i++ {
+		var match bool
 		for _, matchGroup := range generalPattern.matchGroups {
 			if matchGroup == i {
-				// This is a match Group
-				newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
-			} else {
-				// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
-				newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
+				match = true
 			}
 		}
+
+		if match {
+			// This is a match Group
+			newIndexPattern = strings.Replace(newIndexPattern, "*", matchGroups[i], 1)
+		} else {
+			// This is a wildcard (make it ? for now) (yes there can be a more efficient logic for that.)
+			newIndexPattern = strings.Replace(newIndexPattern, "*", "?", 1)
+		}
+
 	}
 	newIndexPattern = strings.Replace(newIndexPattern, "?", "*", -1)
 	return newIndexPattern
@@ -195,10 +201,10 @@ func getMatchGroups(pattern string) []int {
 	groups := make([]int, 0)
 	group := 1
 	for _, char := range pattern {
-		if char == 63 {
+		if char == '?' {
 			groups = append(groups, group)
 			group++
-		} else if char == 42 {
+		} else if char == '*' {
 			group++
 		}
 	}
