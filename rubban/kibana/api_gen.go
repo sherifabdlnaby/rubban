@@ -35,7 +35,7 @@ func (a *APIGen) Validate(ctx context.Context) error {
 
 //GuessVersion Try to Guess Current Kibana API version
 func (a *APIGen) GuessVersion(ctx context.Context) (semver.Version, error) {
-	return a.GuessVersion(ctx)
+	return a.client.GuessVersion(ctx)
 }
 
 //Info Return Kibana Info
