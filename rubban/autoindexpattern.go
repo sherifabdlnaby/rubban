@@ -112,7 +112,7 @@ func (b *rubban) RunAutoIndexPattern() {
 		newIndexPatterns = append(newIndexPatterns, indexPattern)
 	}
 
-	err := b.api.BulkCreateIndexPattern(newIndexPatterns)
+	err := b.api.BulkCreateIndexPattern(context.TODO(), newIndexPatterns)
 	if err != nil {
 		b.logger.Errorw("Failed to bulk create new index patterns", "error", err.Error())
 	}
@@ -126,7 +126,7 @@ func (b *rubban) RunAutoIndexPattern() {
 
 func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns indexPatternMap) {
 	// Get Current IndexPattern Matching Given General Patterns
-	indexPatterns, err := b.api.IndexPatterns(generalPattern.Pattern)
+	indexPatterns, err := b.api.IndexPatterns(context.TODO(), generalPattern.Pattern)
 	if err != nil {
 		b.logger.Warnw("failed to get index patterns matching general pattern. escaping this one...",
 			"generalPattern", generalPattern.Pattern, "error", err.Error())
@@ -139,7 +139,7 @@ func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPat
 	}
 
 	// Get Indices Matching Given General Pattern
-	indices, err := b.api.Indices(generalPattern.Pattern)
+	indices, err := b.api.Indices(context.TODO(), generalPattern.Pattern)
 	if err != nil {
 		b.logger.Warnw("failed to get indices matching a general pattern. escaping this one...",
 			"generalPattern", generalPattern.Pattern, "error", err.Error())

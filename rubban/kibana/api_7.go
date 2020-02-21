@@ -1,24 +1,37 @@
 package kibana
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+
+	"github.com/sherifabdlnaby/rubban/config"
+	"github.com/sherifabdlnaby/rubban/log"
 )
 
 //APIVer7 Implements API Calls compatible with Kibana 7^
 type APIVer7 struct {
-	client *Client
+	client *client
+	log log.Logger
 }
 
 //NewAPIVer7 Constructor
-func NewAPIVer7(client *Client) *APIVer7 {
-	return &APIVer7{client: client}
+func NewAPIVer7(config config.Kibana, log log.Logger) (*APIVer7, error) {
+	client, err := NewKibanaClient(config, log.Extend("client"))
+	if err != nil {
+		return &APIVer7{}, err
+	}
+
+	return &APIVer7{
+		client: client,
+		log:    log,
+	}, nil
 }
 
 //Info Return Kibana Info
-func (a *APIVer7) Info() (Info, error) {
-	resp, err := a.client.get(context.TODO(), "/api/status")
+func (a *APIVer7) Info(ctx context.Context) (Info, error) {
+	resp, err := a.client.get(ctx, "/api/status", nil)
 	if err != nil {
 		return Info{}, err
 	}
@@ -36,9 +49,9 @@ func (a *APIVer7) Info() (Info, error) {
 }
 
 //Indices Get Indices match supported filter (support wildcards)
-func (a *APIVer7) Indices(filter string) ([]Index, error) {
+func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 	indices := make([]Index, 0)
-	resp, err := a.client.post(fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter))
+	resp, err := a.client.post(ctx, fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter), nil)
 	if err != nil {
 		return indices, err
 	}
@@ -46,20 +59,20 @@ func (a *APIVer7) Indices(filter string) ([]Index, error) {
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		err := json.NewDecoder(resp.Body).Decode(&indices)
 		if err != nil {
-			return indices, err
+			return nil, err
 		}
 	}
 	return indices, err
 }
 
 //IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
-func (a *APIVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
+func (a *APIVer7) IndexPatterns(ctx context.Context, filter string) ([]IndexPattern, error) {
 
 	page := 1
 	count := 0
 	aggPatterns := make([]IndexPattern, 0)
 	for {
-		patterns, total, err := a.indexPatternPage(filter, page)
+		patterns, total, err := a.indexPatternPage(ctx, filter, page)
 		if err != nil {
 			return nil, err
 		}
@@ -77,7 +90,7 @@ func (a *APIVer7) IndexPatterns(filter string) ([]IndexPattern, error) {
 }
 
 //BulkCreateIndexPattern Add Index Patterns to Kibana
-func (a *APIVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
+func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern []IndexPattern) error {
 	if len(indexPattern) == 0 {
 		return nil
 	}
@@ -100,7 +113,7 @@ func (a *APIVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	}
 
 	// Send Request
-	resp, err := a.client.postWithJSON("/api/saved_objects/_bulk_create", buff)
+	resp, err := a.client.post(ctx, "/api/saved_objects/_bulk_create", bytes.NewReader(buff))
 	if err != nil {
 		return fmt.Errorf("failed to bulk create saved objects, error: %s", err.Error())
 	}
@@ -113,11 +126,11 @@ func (a *APIVer7) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
 	return nil
 }
 
-func (a *APIVer7) indexPatternPage(filter string, page int) ([]IndexPattern, int, error) {
+func (a *APIVer7) indexPatternPage(ctx context.Context, filter string, page int) ([]IndexPattern, int, error) {
 
 	indexPatterns := make([]IndexPattern, 0)
 	indexPatternPage := IndexPatternPage{}
-	resp, err := a.client.get(context.TODO(), fmt.Sprintf("/api/saved_objects/_find?fields=title&fields=timeFieldName&per_page=1&search=\"%s\"&search_fields=title&type=index-pattern&page=%d", filter, page))
+	resp, err := a.client.get(ctx, fmt.Sprintf("/api/saved_objects/_find?fields=title&fields=timeFieldName&per_page=1&search=\"%s\"&search_fields=title&type=index-pattern&page=%d", filter, page), nil)
 	if err != nil {
 		return indexPatterns, 0, err
 	}

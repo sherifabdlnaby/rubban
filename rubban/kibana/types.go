@@ -1,6 +1,8 @@
 package kibana
 
 import (
+	"context"
+
 	"github.com/Masterminds/semver/v3"
 )
 

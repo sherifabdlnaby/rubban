@@ -11,7 +11,7 @@ import (
 	"gopkg.in/go-playground/validator.v9"
 )
 
-// Validate
+// validate
 func validate(config Config) error {
 	validate := validator.New()
 
@@ -20,7 +20,7 @@ func validate(config Config) error {
 	trans, _ := uni.GetTranslator("en")
 	_ = ens.RegisterDefaultTranslations(validate, trans)
 
-	// Validate
+	// validate
 	err := validate.Struct(&config)
 
 	if err != nil {
@@ -62,7 +62,7 @@ func customValidate(config Config) error {
 		}
 	}
 
-	// Validate cron schedules
+	// validate cron schedules
 	_, err := cron.ParseStandard(config.AutoIndexPattern.Schedule)
 	if err != nil {
 		return fmt.Errorf("cron expression not valid: %s", err.Error())

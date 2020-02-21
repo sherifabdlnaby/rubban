@@ -66,7 +66,7 @@ func Load(configName string) (*Config, error) {
 		return nil, fmt.Errorf("error unmarshalling config: %w", err)
 	}
 
-	// Validate
+	// validate
 	err = validate(*cfg)
 	if err != nil {
 		return nil, err

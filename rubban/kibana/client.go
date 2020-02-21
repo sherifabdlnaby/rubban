@@ -17,8 +17,8 @@ import (
 	"github.com/sherifabdlnaby/rubban/version"
 )
 
-//Client is a HTTP API Request wrapper.
-type Client struct {
+//client is a HTTP API Request wrapper.
+type client struct {
 	baseURL  *url.URL
 	username string
 	password string
@@ -56,7 +56,7 @@ func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 		return nil, err
 	}
 
-	return &Client{
+	return &client{
 		baseURL:  baseURL,
 		username: config.User,
 		password: config.Password,
@@ -118,8 +118,8 @@ func (c *Client) postWithJSON(uri string, body []byte) (*http.Response, error) {
 	return resp, nil
 }
 
-//Validate validate connection to Kibana by pinging /status api.
-func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
+//validate validate connection to Kibana by pinging /status api.
+func (c *client) validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error
 	var resp *http.Response
 	var pingAPIURL = "/api/status"
