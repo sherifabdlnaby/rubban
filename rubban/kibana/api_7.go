@@ -13,7 +13,7 @@ import (
 //APIVer7 Implements API Calls compatible with Kibana 7^
 type APIVer7 struct {
 	client *client
-	log log.Logger
+	log    log.Logger
 }
 
 //NewAPIVer7 Constructor
@@ -90,7 +90,7 @@ func (a *APIVer7) IndexPatterns(ctx context.Context, filter string) ([]IndexPatt
 }
 
 //BulkCreateIndexPattern Add Index Patterns to Kibana
-func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern []IndexPattern) error {
+func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error {
 	if len(indexPattern) == 0 {
 		return nil
 	}

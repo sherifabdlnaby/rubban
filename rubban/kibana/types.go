@@ -6,6 +6,17 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
+//API is an interface for supporting multiple Kibana APIs
+type API interface {
+	Info(ctx context.Context) (Info, error)
+
+	Indices(ctx context.Context, filter string) ([]Index, error)
+
+	IndexPatterns(ctx context.Context, filter string) ([]IndexPattern, error)
+
+	BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error
+}
+
 //Info for Json Unmarshalling API Response
 type Info struct {
 	Name    string `json:"name"`

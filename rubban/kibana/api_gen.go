@@ -29,26 +29,25 @@ func NewAPIGen(config config.Kibana, log log.Logger) (*APIGen, error) {
 }
 
 func (a *APIGen) Validate(ctx context.Context) error {
-	return a.validate(ctx, 5 , 10 * time.Second)
+	return a.validate(ctx, 5, 10*time.Second)
 }
 
-
-func (a *APIGen) GuessVersion(ctx context.Context)  (semver.Version, error)  {
+func (a *APIGen) GuessVersion(ctx context.Context) (semver.Version, error) {
 	return a.guessVersion(ctx)
 }
 
-func (a *APIGen) Info() (Info, error) {
+func (a *APIGen) Info(ctx context.Context) (Info, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
-func (a *APIGen) Indices(filter string) ([]Index, error) {
+func (a *APIGen) Indices(ctx context.Context, filter string) ([]Index, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
-func (a *APIGen) IndexPatterns(filter string) ([]IndexPattern, error) {
+func (a *APIGen) IndexPatterns(ctx context.Context, filter string) ([]IndexPattern, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
-func (a *APIGen) BulkCreateIndexPattern(indexPattern []IndexPattern) error {
+func (a *APIGen) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error {
 	panic("Should Not Be Called from Gen Pattern.")
 }

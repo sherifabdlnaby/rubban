@@ -1,11 +1,11 @@
 package kibana
 
 import (
-	"bytes"
 	"context"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strings"
@@ -26,24 +26,8 @@ type client struct {
 	logger   log.Logger
 }
 
-//API is an interface for supporting multiple Kibana APIs
-type API interface {
-	Info() (Info, error)
-
-	Indices(filter string) ([]Index, error)
-
-	IndexPatterns(filter string) ([]IndexPattern, error)
-
-	BulkCreateIndexPattern(indexPattern []IndexPattern) error
-}
-
-//TODO GENERALIZE CLIENT
-
 //NewKibanaClient Constructor
-func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
-
-	// Create Base URL
-
+func NewKibanaClient(config config.Kibana, logger log.Logger) (*client, error) {
 	//// Add Scheme if doesn't exist (default to HTTP)
 	rawURL := config.Host
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
@@ -68,100 +52,83 @@ func NewKibanaClient(config config.Kibana, logger log.Logger) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) getFullURL(path string) string {
+func (c *client) getUrlFromPath(path string) string {
 	return c.baseURL.String() + path
 }
-func (c *Client) get(ctx context.Context, uri string) (*http.Response, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", c.getFullURL(uri), nil)
+
+func (c *client) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, c.getUrlFromPath(path), body)
 	if err != nil {
 		return nil, err
 	}
+
+	// Set Headers
+	req.Header.Set("Content-Type", "application/json")
+	//req.Header.Set("Accept", "application/json")
 	req.Header.Set("kbn-xsrf", "true")
-	req.SetBasicAuth(c.username, c.password)
 	req.Header.Set("User-Agent", "Rubban/"+version.Version)
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+
+	// Set Auth
+	req.SetBasicAuth(c.username, c.password)
+
+	return req, nil
 }
 
-func (c *Client) post(uri string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", c.getFullURL(uri), nil)
+func (c *client) get(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+	req, err := c.newRequest(ctx, "GET", path, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("kbn-xsrf", "true")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Rubban/"+version.Version)
-	req.SetBasicAuth(c.username, c.password)
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return c.http.Do(req)
 }
 
-func (c *Client) postWithJSON(uri string, body []byte) (*http.Response, error) {
-	req, err := http.NewRequest("POST", c.getFullURL(uri), bytes.NewBuffer(body))
+func (c *client) post(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+	req, err := c.newRequest(ctx, "POST", path, body)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("kbn-xsrf", "true")
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Rubban/"+version.Version)
-	req.SetBasicAuth(c.username, c.password)
-	resp, err := c.http.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	return resp, nil
+	return c.http.Do(req)
 }
 
 //validate validate connection to Kibana by pinging /status api.
 func (c *client) validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error
 	var resp *http.Response
-	var pingAPIURL = "/api/status"
+	var pingPath = "/api/status"
 
-	c.logger.Infof("Testing connection to Kibana API at %s", c.getFullURL(pingAPIURL))
+	c.logger.Infof("Testing connection to Kibana API at %s", c.getUrlFromPath(pingPath))
 
 	for i := 0; i < retry+1; i++ {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-			if i != 0 {
-				c.logger.Infof("Retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i, retry)
-				select {
-				case <-ctx.Done():
-					return ctx.Err()
-				case <-time.After(waitTime):
+		if i != 0 {
+			c.logger.Infof("Retrying in %g seconds...  (%d/%d)", waitTime.Seconds(), i, retry)
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(waitTime):
 
-				}
 			}
-
-			resp, err = c.get(ctx, pingAPIURL)
-			if err == nil {
-				_ = resp.Body.Close()
-				if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-					c.logger.Infof("Successfully connected to Kibana API %s", c.getFullURL(pingAPIURL))
-					return nil
-				}
-				err = fmt.Errorf("%s", resp.Status)
-			}
-
-			c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getFullURL(pingAPIURL)), "error", err.Error())
 		}
+
+		resp, err = c.get(ctx, pingPath, nil)
+		if err == nil {
+			_ = resp.Body.Close()
+			if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+				c.logger.Infof("Successfully connected to Kibana API %s", c.getUrlFromPath(pingPath))
+				return nil
+			}
+			err = fmt.Errorf("%s", resp.Status)
+		}
+
+		c.logger.Warnw(fmt.Sprintf("Could not connect to Kibana API %s", c.getUrlFromPath(pingPath)), "error", err.Error())
 	}
 	return err
 }
 
-//GuessVersion Get Kibana Version (Will use different methods to determine API version)
-func (c *Client) GuessVersion() (semver.Version, error) {
+//guessVersion Get Kibana Version (Will use different methods to determine API version)
+func (c *client) guessVersion(ctx context.Context) (semver.Version, error) {
 
 	// 1
-	resp, err := c.get(context.TODO(), "/api/status")
+	resp, err := c.get(ctx, "/api/status", nil)
 	if err != nil {
 		return semver.Version{}, err
 	}

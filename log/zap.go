@@ -8,6 +8,7 @@ import (
 )
 
 type zapLogger struct {
+	debug bool
 	l *zap.SugaredLogger
 }
 
@@ -52,7 +53,7 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 	}
 
 	// Color
-	if config.Color && (config.Format == console || config.Format == logfmt) {
+	if config.Color && config.Format == console {
 		zapConfig.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
 	}
 
@@ -61,11 +62,15 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 		panic(err)
 	}
 
-	return &zapLogger{l: logger.Sugar().Named(name)}
+	return &zapLogger{l: logger.Sugar().Named(name), debug: config.Debug}
 }
 
 func (z *zapLogger) Extend(name string) Logger {
-	return &zapLogger{l: z.l.Named(name)}
+	if z.debug{
+		return &zapLogger{l: z.l.Named(name)}
+	}else{
+		return &zapLogger{l: z.l}
+	}
 }
 
 func (z *zapLogger) Debug(args ...interface{}) {

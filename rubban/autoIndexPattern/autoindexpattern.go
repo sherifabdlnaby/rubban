@@ -1,17 +1,12 @@
-package rubban
+package autoIndexPattern
 
 import (
 	"context"
-	"fmt"
 	"regexp"
 	"strings"
-	"sync"
-	"time"
 
-	"github.com/dustin/go-humanize"
-	"github.com/robfig/cron/v3"
-	"github.com/sherifabdlnaby/gpool"
 	"github.com/sherifabdlnaby/rubban/config"
+	"github.com/sherifabdlnaby/rubban/log"
 	"github.com/sherifabdlnaby/rubban/rubban/kibana"
 )
 
@@ -25,43 +20,17 @@ type GeneralPattern struct {
 
 //AutoIndexPattern hold attributes for a RunAutoIndexPattern loaded from config.
 type AutoIndexPattern struct {
-	Enabled         bool
+	name            string
 	GeneralPatterns []GeneralPattern
-	Schedule        cron.Schedule
-	entry           cron.Entry
+	kibana          kibana.API
+	log             log.Logger
 }
 
 // string replacers
 var replaceForPattern = strings.NewReplacer("?", "*")
 
-func replacerForRegex(s string) string {
-	s = regexp.QuoteMeta(s)
-	s = strings.NewReplacer("\\*", "(.*)", "\\?", "(.*)").Replace(s)
-	n := strings.Count(s, "(.*)")
-	s = strings.Replace(s, "(.*)", "(.*?)", n-1)
-	return s
-}
-
-// map will be used to agg results of multiple concurrent api requests
-var mu sync.Mutex
-
-//indexPatternMap A map with a concurrent-safe set operation.
-type indexPatternMap map[string]kibana.IndexPattern
-
-func (i indexPatternMap) set(indexPattern, timeFieldName string) {
-	mu.Lock()
-	_, ok := i[indexPattern]
-	if !ok {
-		i[indexPattern] = kibana.IndexPattern{
-			Title:         indexPattern,
-			TimeFieldName: timeFieldName,
-		}
-	}
-	mu.Unlock()
-}
-
 //NewAutoIndexPattern Constructor
-func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
+func NewAutoIndexPattern(config config.AutoIndexPattern, kibana kibana.API, log log.Logger) *AutoIndexPattern {
 
 	generalPattern := make([]GeneralPattern, 0)
 
@@ -75,62 +44,24 @@ func NewAutoIndexPattern(config config.AutoIndexPattern) *AutoIndexPattern {
 		})
 	}
 
-	schedule, err := cron.ParseStandard(config.Schedule)
-	if err != nil {
-		panic(err)
-	}
-
 	return &AutoIndexPattern{
-		Enabled:         config.Enabled,
+		name:            "Auto Index Pattern",
 		GeneralPatterns: generalPattern,
-		Schedule:        schedule,
+		kibana:          kibana,
+		log: log,
 	}
 }
 
-func (b *rubban) RunAutoIndexPattern() {
+func (a *AutoIndexPattern) getIndexPattern(ctx context.Context, generalPattern GeneralPattern) map[string]kibana.IndexPattern {
 
-	b.logger.Info("Running Auto Index Pattern...")
-	startTime := time.Now()
+	newIndexPatterns := make(map[string]kibana.IndexPattern)
 
-	//// Set for Found Patterns ( a set datastructes using Map )
-	computedIndexPatterns := make(indexPatternMap)
-
-	pool := gpool.NewPool(10)
-	for _, generalPattern := range b.autoIndexPattern.GeneralPatterns {
-		_ = pool.Enqueue(context.TODO(), func() {
-			b.getIndexPattern(generalPattern, computedIndexPatterns)
-		})
-	}
-
-	// Wait for Above to Return
-	pool.Stop()
-
-	// Bulk Create Index Patterns
-	/// Create List of Index Patterns
-	newIndexPatterns := make([]kibana.IndexPattern, 0)
-	for _, indexPattern := range computedIndexPatterns {
-		newIndexPatterns = append(newIndexPatterns, indexPattern)
-	}
-
-	err := b.api.BulkCreateIndexPattern(context.TODO(), newIndexPatterns)
-	if err != nil {
-		b.logger.Errorw("Failed to bulk create new index patterns", "error", err.Error())
-	}
-
-	b.logger.Infow(fmt.Sprintf("Successfully created %d Index Patterns. (took ≅ %dms)", len(newIndexPatterns),
-		time.Since(startTime).Milliseconds()), "Index Patterns", newIndexPatterns)
-
-	next := b.autoIndexPattern.entry.Schedule.Next(time.Now())
-	b.logger.Infof("Next run at %s (%s)", next.String(), humanize.Time(next))
-}
-
-func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPatterns indexPatternMap) {
 	// Get Current IndexPattern Matching Given General Patterns
-	indexPatterns, err := b.api.IndexPatterns(context.TODO(), generalPattern.Pattern)
+	indexPatterns, err := a.kibana.IndexPatterns(ctx, generalPattern.Pattern)
 	if err != nil {
-		b.logger.Warnw("failed to get index patterns matching general pattern. escaping this one...",
+		a.log.Warnw("failed to get index patterns matching general pattern. escaping this one...",
 			"generalPattern", generalPattern.Pattern, "error", err.Error())
-		return
+		return newIndexPatterns
 	}
 
 	patternsList := make([]string, 0)
@@ -139,11 +70,11 @@ func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPat
 	}
 
 	// Get Indices Matching Given General Pattern
-	indices, err := b.api.Indices(context.TODO(), generalPattern.Pattern)
+	indices, err := a.kibana.Indices(ctx, generalPattern.Pattern)
 	if err != nil {
-		b.logger.Warnw("failed to get indices matching a general pattern. escaping this one...",
+		a.log.Warnw("failed to get indices matching a general pattern. escaping this one...",
 			"generalPattern", generalPattern.Pattern, "error", err.Error())
-		return
+		return newIndexPatterns
 	}
 
 	// Get Indices That Hasn't Matched ANY IndexPattern
@@ -168,8 +99,13 @@ func (b *rubban) getIndexPattern(generalPattern GeneralPattern, computedIndexPat
 	// Build Index Pattern for every unmatched Index
 	for _, unmatchedIndex := range unmatchedIndices {
 		newIndexPattern := buildIndexPattern(generalPattern, unmatchedIndex)
-		computedIndexPatterns.set(newIndexPattern, generalPattern.TimeFieldName)
+		newIndexPatterns[newIndexPattern] = kibana.IndexPattern{
+			Title:         newIndexPattern,
+			TimeFieldName: generalPattern.TimeFieldName,
+		}
 	}
+
+	return newIndexPatterns
 }
 
 func buildIndexPattern(generalPattern GeneralPattern, unmatchedIndex string) string {
@@ -209,4 +145,18 @@ func getMatchGroups(pattern string) []int {
 		}
 	}
 	return groups
+}
+
+func replacerForRegex(s string) string {
+	// Escape Index Pattern name (to escape dots(.) and other regex special symbols
+	s = regexp.QuoteMeta(s)
+
+	// Unescape only \* and \? to actual Regex symbols
+	s = strings.NewReplacer("\\*", "(.*)", "\\?", "(.*)").Replace(s)
+
+	// Make Wildcards Lazy Except Last one (hence the n-1)
+	n := strings.Count(s, "(.*)")
+	s = strings.Replace(s, "(.*)", "(.*?)", n-1)
+
+	return s
 }
