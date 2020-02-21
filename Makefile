@@ -3,12 +3,11 @@
 BIN_NAME=rubban
 
 VERSION := $(shell git describe --exact-match --tags 2> /dev/null || git describe --tags )
-GIT_COMMIT=$(shell git rev-parse HEAD)
-GIT_COMMIT_SHORT=$(shell git rev-parse --short HEAD)
 GIT_DIRTY=$(shell test -n "`git status --porcelain`" && echo "+dirty" || true)
+GIT_COMMIT=$(shell git rev-parse --short HEAD)${GIT_DIRTY}
 BUILD_DATE=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 IMAGE_NAME := sherifabdlnaby/rubban
-FLAGS := -X github.com/sherifabdlnaby/rubban/version.GitCommit=${GIT_COMMIT}${GIT_DIRTY} -X github.com/sherifabdlnaby/rubban/version.Version=${VERSION} -X github.com/sherifabdlnaby/rubban/version.BuildDate=${BUILD_DATE}
+FLAGS := -X github.com/sherifabdlnaby/rubban/version.GitCommit=${GIT_COMMIT} -X github.com/sherifabdlnaby/rubban/version.Version=${VERSION} -X github.com/sherifabdlnaby/rubban/version.BuildDate=${BUILD_DATE}
 
 default: run
 
@@ -45,8 +44,6 @@ build-image:
 	@echo "building image ${BIN_NAME} ${VERSION} $(GIT_COMMIT)"
 	docker build	--build-arg VERSION=${VERSION} \
 	 				--build-arg GIT_COMMIT=$(GIT_COMMIT) \
-	 				--build-arg GIT_COMMIT_SHORT=$(GIT_COMMIT_SHORT) \
-	 				--build-arg GIT_DIRTY=$(GIT_DIRTY) \
 	 				--build-arg BUILD_DATE=$(BUILD_DATE) \
 	 				-t $(IMAGE_NAME):local .
 
