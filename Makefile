@@ -69,3 +69,5 @@ clean:
 test:
 	go test ./...
 
+lint:
+	golangci-lint run  --print-issued-lines --fix
