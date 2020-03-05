@@ -14,6 +14,10 @@ type mockAPI struct {
 	indexPatterns []kibana.IndexPattern
 }
 
+func (m *mockAPI) PutIndexPattern(ctx context.Context, indexPattern kibana.IndexPattern) error {
+	panic("implement me")
+}
+
 func (m *mockAPI) Info(ctx context.Context) (kibana.Info, error) {
 	panic("implement me")
 }
@@ -22,11 +26,15 @@ func (m *mockAPI) Indices(ctx context.Context, filter string) ([]kibana.Index, e
 	return m.indices, nil
 }
 
-func (m *mockAPI) IndexPatterns(ctx context.Context, filter string) ([]kibana.IndexPattern, error) {
+func (m *mockAPI) IndexPatterns(ctx context.Context, filter string, fields []string) ([]kibana.IndexPattern, error) {
 	return m.indexPatterns, nil
 }
 
 func (m *mockAPI) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]kibana.IndexPattern) error {
+	panic("implement me")
+}
+
+func (m *mockAPI) IndexPatternFields(ctx context.Context, pattern string) (*kibana.IndexPatternFields, error) {
 	panic("implement me")
 }
 

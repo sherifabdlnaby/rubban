@@ -57,7 +57,7 @@ func (a *AutoIndexPattern) getIndexPattern(ctx context.Context, generalPattern G
 	newIndexPatterns := make(map[string]kibana.IndexPattern)
 
 	// Get Current IndexPattern Matching Given General Patterns
-	indexPatterns, err := a.kibana.IndexPatterns(ctx, generalPattern.Pattern)
+	indexPatterns, err := a.kibana.IndexPatterns(ctx, generalPattern.Pattern, nil)
 	if err != nil {
 		a.log.Warnw("failed to get index patterns matching general pattern. escaping this one...",
 			"generalPattern", generalPattern.Pattern, "error", err.Error())

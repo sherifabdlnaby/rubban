@@ -10,18 +10,20 @@ import (
 	"github.com/sherifabdlnaby/rubban/log"
 	"github.com/sherifabdlnaby/rubban/rubban/autoindexpattern"
 	"github.com/sherifabdlnaby/rubban/rubban/kibana"
+	"github.com/sherifabdlnaby/rubban/rubban/refreshindexpattern"
 )
 
 //Rubban App Structure
 type Rubban struct {
-	config           *config.Config
-	logger           log.Logger
-	semVer           semver.Version
-	api              kibana.API
-	scheduler        scheduler
-	autoIndexPattern autoindexpattern.AutoIndexPattern
-	mainCtx          context.Context
-	cancel           context.CancelFunc
+	config              *config.Config
+	logger              log.Logger
+	semVer              semver.Version
+	api                 kibana.API
+	scheduler           scheduler
+	autoIndexPattern    autoindexpattern.AutoIndexPattern
+	refreshIndexPattern refreshindexpattern.RefreshIndexPattern
+	mainCtx             context.Context
+	cancel              context.CancelFunc
 }
 
 //New Create new App structure
@@ -74,7 +76,7 @@ func (r *Rubban) Initialize() error {
 func (r *Rubban) Start() {
 
 	r.logger.Infof("Starting Rubban...")
-
+	r.refreshIndexPattern.Run(r.mainCtx)
 	// Start scheduler
 	r.scheduler.Start()
 }
@@ -91,7 +93,6 @@ func (r *Rubban) Stop() {
 
 	r.logger.Infof("Stopped.")
 	r.logger.Infof("Goodbye <3")
-	_ = r.logger.Sync()
 }
 
 func (r *Rubban) initTasks() {
@@ -99,6 +100,11 @@ func (r *Rubban) initTasks() {
 	if r.config.AutoIndexPattern.Enabled {
 		r.autoIndexPattern = *autoindexpattern.NewAutoIndexPattern(r.config.AutoIndexPattern, r.api, r.logger.Extend("autoIndexPattern"))
 		r.logger.Infof("Enabled %s, Loaded %d General Pattern(s)", r.autoIndexPattern.Name(), len(r.autoIndexPattern.GeneralPatterns))
+	}
+
+	if r.config.RefreshIndexPattern.Enabled {
+		r.refreshIndexPattern = *refreshindexpattern.NewRefreshIndexPattern(r.config.RefreshIndexPattern, r.api, r.logger.Extend("refreshIndexPattern"))
+		r.logger.Infof("Enabled %s, Refreshing %d Pattern(s)", r.autoIndexPattern.Name(), len(r.refreshIndexPattern.Patterns))
 	}
 
 	// ... Init Other Tasks in future
@@ -109,6 +115,13 @@ func (r *Rubban) registerTasks() error {
 	// Register Auto Index Pattern
 	if r.config.AutoIndexPattern.Enabled {
 		err := r.scheduler.Register(r.config.AutoIndexPattern.Schedule, &r.autoIndexPattern)
+		if err != nil {
+			return fmt.Errorf("failed to register task, error: %s", err.Error())
+		}
+	}
+
+	if r.config.RefreshIndexPattern.Enabled {
+		err := r.scheduler.Register(r.config.RefreshIndexPattern.Schedule, &r.refreshIndexPattern)
 		if err != nil {
 			return fmt.Errorf("failed to register task, error: %s", err.Error())
 		}

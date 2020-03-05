@@ -93,6 +93,14 @@ func (c *Client) Post(ctx context.Context, path string, body io.Reader) (*http.R
 	return c.http.Do(req)
 }
 
+func (c *Client) Put(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+	req, err := c.newRequest(ctx, "PUT", path, body)
+	if err != nil {
+		return nil, err
+	}
+	return c.http.Do(req)
+}
+
 //Validate Validate connection to Kibana by pinging /status api.
 func (c *Client) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error

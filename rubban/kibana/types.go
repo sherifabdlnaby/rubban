@@ -2,6 +2,7 @@ package kibana
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/Masterminds/semver/v3"
 )
@@ -12,7 +13,11 @@ type API interface {
 
 	Indices(ctx context.Context, filter string) ([]Index, error)
 
-	IndexPatterns(ctx context.Context, filter string) ([]IndexPattern, error)
+	IndexPatterns(ctx context.Context, filter string, fields []string) ([]IndexPattern, error)
+
+	PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error
+
+	IndexPatternFields(ctx context.Context, pattern string) (*IndexPatternFields, error)
 
 	BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error
 }
@@ -41,14 +46,23 @@ type Index struct {
 
 //IndexPattern for Json Unmarshalling API Response
 type IndexPattern struct {
-	Title         string `json:"title"`
-	TimeFieldName string `json:"timeFieldName"`
+	ID                 string
+	Version            string
+	Title              string `json:"title"`
+	TimeFieldName      string `json:"timeFieldName"`
+	IndexPatternFields `json:"fields, squash"`
+}
+
+//IndexPattern for Json Unmarshalling API Response
+
+type IndexPatternFields struct {
+	Fields json.RawMessage
 }
 
 //BulkIndexPattern for Json Unmarshalling API Response
 type BulkIndexPattern struct {
 	Type       string       `json:"type"`
-	Attributes IndexPattern `json:"attributes,omitempty"`
+	Attributes IndexPattern `json:"Attributes,omitempty"`
 }
 
 //IndexPatternPage for Json Unmarshalling API Response
@@ -59,6 +73,7 @@ type IndexPatternPage struct {
 	SavedObjects []struct {
 		Type       string       `json:"type"`
 		ID         string       `json:"id"`
-		Attributes IndexPattern `json:"attributes"`
+		Version    string       `json:"version"`
+		Attributes IndexPattern `json:"Attributes"`
 	} `json:"saved_objects"`
 }

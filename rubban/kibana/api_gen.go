@@ -15,6 +15,10 @@ type APIGen struct {
 	log    log.Logger
 }
 
+func (a *APIGen) PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error {
+	panic("implement me")
+}
+
 //NewAPIGen Constructor
 func NewAPIGen(config config.Kibana, log log.Logger) (*APIGen, error) {
 	client, err := NewKibanaClient(config, log.Extend("Client"))
@@ -49,11 +53,16 @@ func (a *APIGen) Indices(ctx context.Context, filter string) ([]Index, error) {
 }
 
 //IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
-func (a *APIGen) IndexPatterns(ctx context.Context, filter string) ([]IndexPattern, error) {
+func (a *APIGen) IndexPatterns(ctx context.Context, filter string, fields []string) ([]IndexPattern, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }
 
 //BulkCreateIndexPattern Add Index Patterns to Kibana
 func (a *APIGen) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error {
+	panic("Should Not Be Called from Gen Pattern.")
+}
+
+//IndexPatternFields Get Fields
+func (a *APIGen) IndexPatternFields(ctx context.Context, pattern string) (*IndexPatternFields, error) {
 	panic("Should Not Be Called from Gen Pattern.")
 }

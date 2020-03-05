@@ -51,6 +51,15 @@ func customValidate(config Config) error {
 		}
 	}
 
+	for _, pattern := range config.RefreshIndexPattern.Patterns {
+		if strings.ContainsAny(pattern, "/\\#\"?<>| ,") || len(pattern) > 255 ||
+			pattern == "." || pattern == ".." || strings.HasPrefix(pattern, "-") ||
+			strings.HasPrefix(pattern, "_") || strings.HasPrefix(pattern, "+") ||
+			pattern != strings.ToLower(pattern) {
+			return fmt.Errorf("invalid pattern [%s]", pattern)
+		}
+	}
+
 	for _, generalPattern := range config.AutoIndexPattern.GeneralPatterns {
 		pattern := generalPattern.Pattern
 		if strings.ContainsAny(pattern, "/\\#\"<>| ,") || len(pattern) > 255 ||
@@ -65,7 +74,12 @@ func customValidate(config Config) error {
 	// validate cron schedules
 	_, err := cron.ParseStandard(config.AutoIndexPattern.Schedule)
 	if err != nil {
-		return fmt.Errorf("cron expression not valid: %s", err.Error())
+		return fmt.Errorf("autoindexpattern's cron expression not valid: %s", err.Error())
+	}
+
+	_, err = cron.ParseStandard(config.RefreshIndexPattern.Schedule)
+	if err != nil {
+		return fmt.Errorf("refreshindexpattern's cron expression not valid: %s", err.Error())
 	}
 
 	return nil

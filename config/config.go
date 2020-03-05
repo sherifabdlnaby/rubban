@@ -2,9 +2,10 @@ package config
 
 //Config for Config Unmarshalling
 type Config struct {
-	Kibana           Kibana           `validate:"required"`
-	Logging          Logging          `validate:"required"`
-	AutoIndexPattern AutoIndexPattern `validate:"required"`
+	Kibana              Kibana  `validate:"required"`
+	Logging             Logging `validate:"required"`
+	AutoIndexPattern    AutoIndexPattern
+	RefreshIndexPattern RefreshIndexPattern
 }
 
 //Kibana for Config Unmarshalling
@@ -25,6 +26,13 @@ type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
 	Schedule        string `validate:"required"`
+}
+
+//RefreshIndexPattern for Config Unmarshalling
+type RefreshIndexPattern struct {
+	Enabled  bool
+	Patterns []string
+	Schedule string `validate:"required"`
 }
 
 //Logging for Config Unmarshalling
@@ -50,9 +58,14 @@ func Default() *Config {
 			Color:  false,
 		},
 		AutoIndexPattern: AutoIndexPattern{
-			Enabled:         true,
+			Enabled:         false,
 			GeneralPatterns: nil,
 			Schedule:        "*/5 * * * *",
+		},
+		RefreshIndexPattern: RefreshIndexPattern{
+			Enabled:  false,
+			Patterns: nil,
+			Schedule: "*/5 * * * *",
 		},
 	}
 }

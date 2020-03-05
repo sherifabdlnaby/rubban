@@ -19,7 +19,7 @@ linters-settings:
         local-prefixes: rubban
 
 linters:
-    disable-all: false
+    disable-all: true
     enable:
         - goconst
         - gocyclo
