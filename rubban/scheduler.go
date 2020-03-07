@@ -65,7 +65,13 @@ func (s *scheduler) Register(spec string, job Task) error {
 	}
 
 	entry := s.scheduler.Schedule(schedule, cron.FuncJob(func() {
-		// TODO handle PANIC to not let all app crash if a single task crash.
+
+		defer func() {
+			if r := recover(); r != nil {
+				s.logger.Warnf("Task [%s] PANICKED.", job.Name())
+			}
+		}()
+
 		s.logger.Infof("Running %s...", job.Name())
 		startTime := time.Now()
 
