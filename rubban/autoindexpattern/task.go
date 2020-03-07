@@ -14,8 +14,8 @@ func (a *AutoIndexPattern) Run(ctx context.Context) {
 	//// Set for Found Patterns ( a set datastructes using Map )
 	newIndexPatterns := make(map[string]kibana.IndexPattern)
 
-	// Send Requests Concurrently // TODO Make concurrency configurable
-	pool := gpool.NewPool(10)
+	// Send Requests Concurrently
+	pool := gpool.NewPool(a.concurrency)
 	wg := sync.WaitGroup{}
 	for _, generalPattern := range a.GeneralPatterns {
 		mx := sync.Mutex{}

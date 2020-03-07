@@ -11,19 +11,21 @@ import (
 
 //RefreshIndexPattern hold attributes for a RunAutoIndexPattern loaded from config.
 type RefreshIndexPattern struct {
-	name     string
-	Patterns []string
-	kibana   kibana.API
-	log      log.Logger
+	name        string
+	concurrency int
+	Patterns    []string
+	kibana      kibana.API
+	log         log.Logger
 }
 
 //NewRefreshIndexPattern Constructor
 func NewRefreshIndexPattern(config config.RefreshIndexPattern, kibana kibana.API, log log.Logger) *RefreshIndexPattern {
 	return &RefreshIndexPattern{
-		name:     "Refresh Indices Patterns",
-		Patterns: config.Patterns,
-		kibana:   kibana,
-		log:      log,
+		name:        "Refresh Indices Patterns",
+		concurrency: config.Concurrency,
+		Patterns:    config.Patterns,
+		kibana:      kibana,
+		log:         log,
 	}
 }
 

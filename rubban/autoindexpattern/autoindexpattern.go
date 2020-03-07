@@ -21,6 +21,7 @@ type GeneralPattern struct {
 //AutoIndexPattern hold attributes for a RunAutoIndexPattern loaded from config.
 type AutoIndexPattern struct {
 	name            string
+	concurrency     int
 	GeneralPatterns []GeneralPattern
 	kibana          kibana.API
 	log             log.Logger
@@ -46,6 +47,7 @@ func NewAutoIndexPattern(config config.AutoIndexPattern, kibana kibana.API, log 
 
 	return &AutoIndexPattern{
 		name:            "Auto Index Pattern",
+		concurrency:     config.Concurrency,
 		GeneralPatterns: generalPattern,
 		kibana:          kibana,
 		log:             log,

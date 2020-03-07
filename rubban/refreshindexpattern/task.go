@@ -13,11 +13,9 @@ import (
 //Run Run Auto Index Pattern creation task
 func (a *RefreshIndexPattern) Run(ctx context.Context) {
 
-	concurrency := 10
-
-	// Send Requests Concurrently // TODO Make concurrency configurable
-	idxPatternPool := gpool.NewPool(concurrency)
-	idxPatternChan := make(chan []kibana.IndexPattern, concurrency)
+	// Send Requests Concurrently
+	idxPatternPool := gpool.NewPool(a.concurrency)
+	idxPatternChan := make(chan []kibana.IndexPattern, a.concurrency)
 
 	wg := sync.WaitGroup{}
 

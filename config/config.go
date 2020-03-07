@@ -26,13 +26,15 @@ type AutoIndexPattern struct {
 	Enabled         bool
 	GeneralPatterns []GeneralPattern
 	Schedule        string `validate:"required"`
+	Concurrency     int    `validate:"gt=0"`
 }
 
 //RefreshIndexPattern for Config Unmarshalling
 type RefreshIndexPattern struct {
-	Enabled  bool
-	Patterns []string
-	Schedule string `validate:"required"`
+	Enabled     bool
+	Patterns    []string
+	Schedule    string `validate:"required"`
+	Concurrency int    `validate:"gt=0"`
 }
 
 //Logging for Config Unmarshalling
@@ -61,11 +63,13 @@ func Default() *Config {
 			Enabled:         false,
 			GeneralPatterns: nil,
 			Schedule:        "*/5 * * * *",
+			Concurrency:     20,
 		},
 		RefreshIndexPattern: RefreshIndexPattern{
-			Enabled:  false,
-			Patterns: nil,
-			Schedule: "*/5 * * * *",
+			Enabled:     false,
+			Patterns:    nil,
+			Schedule:    "*/5 * * * *",
+			Concurrency: 20,
 		},
 	}
 }
