@@ -76,7 +76,7 @@ func (r *Rubban) Initialize() error {
 func (r *Rubban) Start() {
 
 	r.logger.Infof("Starting Rubban...")
-	r.refreshIndexPattern.Run(r.mainCtx)
+
 	// Start scheduler
 	r.scheduler.Start()
 }
@@ -104,7 +104,7 @@ func (r *Rubban) initTasks() {
 
 	if r.config.RefreshIndexPattern.Enabled {
 		r.refreshIndexPattern = *refreshindexpattern.NewRefreshIndexPattern(r.config.RefreshIndexPattern, r.api, r.logger.Extend("refreshIndexPattern"))
-		r.logger.Infof("Enabled %s, Refreshing %d Pattern(s)", r.autoIndexPattern.Name(), len(r.refreshIndexPattern.Patterns))
+		r.logger.Infof("Enabled %s, Refreshing %d Pattern(s)", r.refreshIndexPattern.Name(), len(r.refreshIndexPattern.Patterns))
 	}
 
 	// ... Init Other Tasks in future

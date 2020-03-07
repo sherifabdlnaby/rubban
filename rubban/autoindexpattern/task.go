@@ -16,9 +16,12 @@ func (a *AutoIndexPattern) Run(ctx context.Context) {
 
 	// Send Requests Concurrently // TODO Make concurrency configurable
 	pool := gpool.NewPool(10)
+	wg := sync.WaitGroup{}
 	for _, generalPattern := range a.GeneralPatterns {
 		mx := sync.Mutex{}
-		_ = pool.Enqueue(ctx, func() {
+		wg.Add(1)
+		err := pool.Enqueue(ctx, func() {
+			defer wg.Done()
 			indexPatterns := a.getIndexPattern(ctx, generalPattern)
 
 			// Add Result to global Result
@@ -28,9 +31,14 @@ func (a *AutoIndexPattern) Run(ctx context.Context) {
 			}
 			mx.Unlock()
 		})
+
+		if err != nil {
+			wg.Done()
+		}
 	}
 
 	// Wait for all above jobs to Return
+	wg.Wait()
 	pool.Stop()
 
 	err := a.kibana.BulkCreateIndexPattern(ctx, newIndexPatterns)
