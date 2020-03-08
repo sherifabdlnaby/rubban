@@ -6,9 +6,17 @@ kibana:
 autoIndexPattern:
     enabled: true
     schedule: "*/5 * * * *"
+    concurrency: 10
     generalPatterns:
         -   pattern: logstash-apache-access-*-?
             timeFieldName: "@timestamp"
+
+refreshIndexPattern:
+    enabled: true
+    schedule: "* * * * *"
+    concurrency: 10
+    patterns:
+        - logstash-apache-access-*-?
 
 logging:
     level: info
