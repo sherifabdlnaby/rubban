@@ -148,7 +148,7 @@ autoIndexPattern:
 
 `refreshIndexPattern.concurrency`: Control How many Requests are made to Kibana API concurrently.  (*default:*  20)
 
-`autoIndexPattern.patterns`: An array of Patterns, where each pattern can match multiple index patterns. Similar to General Patterns explained above but without `?` matcher instead all uses `*`.
+`refreshIndexPattern.patterns`: An array of Patterns, where each pattern can match multiple index patterns. Similar to General Patterns explained above but without `?` matcher instead all uses `*`.
 
 ##### Example:
 
