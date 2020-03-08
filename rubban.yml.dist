@@ -1,22 +1,22 @@
 kibana:
-    host: kibana:5601
+    host: http://localhost:5601
     user: elastic
     password: changeme
 
 autoIndexPattern:
-    enabled: true
+    enabled: false
     schedule: "*/5 * * * *"
     concurrency: 10
     generalPatterns:
-        -   pattern: logstash-apache-access-*-?
+        -   pattern: logstash-apache-access-?-*
             timeFieldName: "@timestamp"
 
 refreshIndexPattern:
-    enabled: true
+    enabled: false
     schedule: "* * * * *"
     concurrency: 10
     patterns:
-        - logstash-apache-access-*-?
+        - logstash-apache-access-*-*
 
 logging:
     level: info
