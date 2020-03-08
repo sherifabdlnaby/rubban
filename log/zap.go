@@ -66,7 +66,7 @@ func NewZapLoggerImpl(name string, config config.Logging) Logger {
 }
 
 func (z *zapLogger) Extend(name string) Logger {
-	if !z.doExtend {
+	if z.doExtend {
 		return &zapLogger{l: z.l.Named(name)}
 	}
 	return &zapLogger{l: z.l}
