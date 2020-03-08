@@ -89,10 +89,15 @@ var idxPatternID = regexp.MustCompile(`(index-pattern:)(.*)`)
 //IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
 func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []string) ([]IndexPattern, error) {
 
+	// As Index Pattern Names in Kibana Index is of type text. It CANNOT be queried with wildcards (ex logs-*-xyz-*),
+	// because It's analyzed and tokenized, so it can be looked up using exact phrase (that remove punc like * - . etc)
+	// which is not ideal, here we do a query that will get all results + some false positives, then w reiterate to
+	// eliminate these false positives. It's okay to do that since number of Index patters can rarely be 1000+ per pattern.
+	// so it's okay to do these extra steps and won't add much overhead.
+
 	var IndexPatterns = make([]IndexPattern, 0)
 
 	// Remove Non Alpha Numeric Chars AND Trim Duplicate Whitespaces.
-	// As Index Pattern Names in Kibana Index is of type text. //TODO Explain why we did it this way.
 	indexPatternTrimd := space.ReplaceAllString(alphaNumericRegex.ReplaceAllString(filter, " "), " ")
 
 	requestBody := fmt.Sprintf(`{
