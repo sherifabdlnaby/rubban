@@ -155,10 +155,15 @@ func (r *Rubban) initKibanaClient(ctx context.Context) error {
 	r.logger.Infow(fmt.Sprintf("Determined Kibana Version: %s", r.semVer.String()))
 
 	// Determine API
-	// TODO for now Rubban only support API V7, when testing other Kibana
-	r.api, err = kibana.NewAPIVer7(r.config.Kibana, r.logger)
-	if err != nil {
-		r.logger.Fatalw("Could not Initialize Kibana API client", "error", err.Error())
+	ver7, _ := semver.NewVersion("7.0.0")
+	if r.semVer.GreaterThan(ver7) || r.semVer.Equal(ver7) {
+		r.api, err = kibana.NewAPIVer7(r.config.Kibana, r.logger)
+		if err != nil {
+			r.logger.Fatalw("Could not Initialize Kibana API client", "error", err.Error())
+			return errFailedToInitialize
+		}
+	} else {
+		r.logger.Fatalf("Version %s is not Supported", r.semVer.String())
 		return errFailedToInitialize
 	}
 
