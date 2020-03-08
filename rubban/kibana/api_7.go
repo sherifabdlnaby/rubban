@@ -5,11 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"net/url"
-	"strconv"
+	"regexp"
+	"strings"
 
 	"github.com/sherifabdlnaby/rubban/config"
 	"github.com/sherifabdlnaby/rubban/log"
+	"github.com/sherifabdlnaby/rubban/rubban/utils"
 )
 
 //APIVer7 Implements API Calls compatible with Kibana 7^
@@ -67,49 +68,72 @@ func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 	return indices, err
 }
 
+type FindIndexPatternResponse struct {
+	Hits struct {
+		Hits []struct {
+			ID     string `json:"_id"`
+			Source struct {
+				IndexPattern struct {
+					Title         string `json:"title"`
+					TimeFieldName string `json:"timeFieldName"`
+				} `json:"index-pattern"`
+			} `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
+}
+
+var alphaNumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
+var space = regexp.MustCompile(`\s+`)
+var idxPatternID = regexp.MustCompile(`(index-pattern:)(.*)`)
+
 //IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
 func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []string) ([]IndexPattern, error) {
 
-	page := 1
-	count := 0
-	aggPatterns := make([]IndexPattern, 0)
-	for {
-		patterns, total, err := a.indexPatternPage(ctx, filter, fields, page)
-		if err != nil {
-			return nil, err
+	var IndexPatterns = make([]IndexPattern, 0)
+
+	// Remove Non Alpha Numeric Chars AND Trim Duplicate Whitespaces.
+	// As Index Pattern Names in Kibana Index is of type text. //TODO Explain why we did it this way.
+	indexPatternTrimd := space.ReplaceAllString(alphaNumericRegex.ReplaceAllString(filter, " "), " ")
+
+	requestBody := fmt.Sprintf(`{
+	  "_source": ["index-pattern.title","index-pattern.timeFieldName"],
+      "size": 10000,
+	  "query": {
+			"bool": {
+		  "must": [
+			{
+			  "query_string" : {
+				"query" : "%s",
+				"auto_generate_synonyms_phrase_query": true,
+				"analyze_wildcard": true,
+				"default_operator": "AND"
+				, "fields": ["index-pattern.title"]
+				, "fuzziness": 0.0
+				, "phrase_slop": 0
+			}
+			},
+			{
+			  "match_phrase": {
+				"type": {
+				  "query": "index-pattern"
+				}
+			  }
+			}
+		  ],
+		  "filter": [],
+		  "should": [],
+		  "must_not": []
 		}
+	  }
+	}`, indexPatternTrimd)
 
-		aggPatterns = append(aggPatterns, patterns...)
-		count += len(patterns)
-		page++
-
-		if count >= total {
-			break
-		}
-	}
-
-	return aggPatterns, nil
-}
-
-//IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
-func (a *APIVer7) IndexPatternFields(ctx context.Context, pattern string) (*IndexPatternFields, error) {
-
-	urlQuery := make(url.Values, 0)
-	urlQuery.Add("meta_fields", "_score")
-	urlQuery.Add("meta_fields", "_index")
-	urlQuery.Add("meta_fields", "_type")
-	urlQuery.Add("meta_fields", "_id")
-	urlQuery.Add("meta_fields", "_source")
-	urlQuery.Add("pattern", pattern)
-
-	// Manually Encode Filter because for some reason Kibana needs a unescaped and quoted filter string.
-	resp, err := a.client.Get(ctx, "/api/index_patterns/_fields_for_wildcard?"+urlQuery.Encode(), nil)
+	resp, err := a.client.Post(ctx, "/api/console/proxy?path=.kibana/_search&method=POST", strings.NewReader(requestBody))
 	if err != nil {
-		return nil, err
+		return IndexPatterns, err
 	}
 	defer resp.Body.Close()
 
-	response := IndexPatternFields{}
+	response := FindIndexPatternResponse{}
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 		err := json.NewDecoder(resp.Body).Decode(&response)
 		if err != nil {
@@ -117,12 +141,22 @@ func (a *APIVer7) IndexPatternFields(ctx context.Context, pattern string) (*Inde
 		}
 	}
 
-	return &response, nil
+	regex := regexp.MustCompile(utils.ReplacerForRegex(filter))
 
+	for _, hit := range response.Hits.Hits {
+		if regex.MatchString(hit.Source.IndexPattern.Title) {
+			IndexPatterns = append(IndexPatterns, IndexPattern{
+				ID:            idxPatternID.ReplaceAllString(hit.ID, "$2"),
+				Title:         hit.Source.IndexPattern.Title,
+				TimeFieldName: hit.Source.IndexPattern.TimeFieldName,
+			})
+		}
+	}
+	return IndexPatterns, err
 }
 
 //BulkCreateIndexPattern Add Index Patterns to Kibana
-func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error {
+func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern []IndexPattern) error {
 	if len(indexPattern) == 0 {
 		return nil
 	}
@@ -132,12 +166,14 @@ func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern map[s
 	for _, pattern := range indexPattern {
 		bulkRequest = append(bulkRequest, BulkIndexPattern{
 			Type: "index-pattern",
+			ID:   pattern.ID,
 			Attributes: IndexPattern{
 				Title:         pattern.Title,
 				TimeFieldName: pattern.TimeFieldName,
 			},
 		})
 	}
+
 	// Json Marshaling
 	buff, err := json.Marshal(bulkRequest)
 	if err != nil {
@@ -145,7 +181,7 @@ func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern map[s
 	}
 
 	// Send Request
-	resp, err := a.client.Post(ctx, "/api/saved_objects/_bulk_create", bytes.NewReader(buff))
+	resp, err := a.client.Post(ctx, "/api/saved_objects/_bulk_create?overwrite=true", bytes.NewReader(buff))
 	if err != nil {
 		return fmt.Errorf("failed to bulk create saved objects, error: %s", err.Error())
 	}
@@ -156,46 +192,6 @@ func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern map[s
 	}
 
 	return nil
-}
-
-func (a *APIVer7) indexPatternPage(ctx context.Context, filter string, fields []string, page int) ([]IndexPattern, int, error) {
-
-	indexPatterns := make([]IndexPattern, 0)
-	indexPatternPage := IndexPatternPage{}
-	urlQuery := make(url.Values, 0)
-	urlQuery.Add("per_page", "20")
-	urlQuery.Add("page", strconv.Itoa(page))
-	urlQuery.Add("search_fields", "title")
-	urlQuery.Add("type", "index-pattern")
-	urlQuery.Add("fields", "title")
-	urlQuery.Add("fields", "timeFieldName")
-	for _, field := range fields {
-		urlQuery.Add("fields", field)
-	}
-	query := urlQuery.Encode()
-
-	// Manually Encode Filter because for some reason Kibana needs a unescaped and quoted filter string.
-	resp, err := a.client.Get(ctx, "/api/saved_objects/_find?search=\""+filter+"\""+"&"+query, nil)
-	if err != nil {
-		return indexPatterns, 0, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		err := json.NewDecoder(resp.Body).Decode(&indexPatternPage)
-		if err != nil {
-			return nil, 0, err
-		}
-	}
-
-	for i := 0; i < len(indexPatternPage.SavedObjects); i++ {
-		indexPattern := indexPatternPage.SavedObjects[i].Attributes
-		indexPattern.ID = indexPatternPage.SavedObjects[i].ID
-		indexPattern.Version = indexPatternPage.SavedObjects[i].Version
-		indexPatterns = append(indexPatterns, indexPattern)
-	}
-
-	return indexPatterns, indexPatternPage.Total, err
 }
 
 type PutIndexPatternAttr struct {
@@ -209,31 +205,6 @@ type PutIndexPatternBody struct {
 }
 
 func (a *APIVer7) PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error {
-	// Prepare Requests
 
-	request := PutIndexPatternBody{
-		Attributes: PutIndexPatternAttr{
-			Title:  indexPattern.Title,
-			Fields: string(indexPattern.IndexPatternFields.Fields),
-		},
-		Version: indexPattern.Version,
-	}
-
-	// Json Marshaling
-	buff, err := json.Marshal(request)
-	if err != nil {
-		return fmt.Errorf("failed to JSON marshaling PUT index pattern")
-	}
-
-	// Send Request
-	resp, err := a.client.Put(ctx, "/api/saved_objects/index-pattern/"+indexPattern.ID, bytes.NewReader(buff))
-	if err != nil {
-		return fmt.Errorf("failed to PUT index pattern, error: %s", err.Error())
-	}
-
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return fmt.Errorf("failed to PUT index pattern, error: %s", resp.Status)
-	}
-
-	return err
+	return nil
 }

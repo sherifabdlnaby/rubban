@@ -58,11 +58,6 @@ func (a *APIGen) IndexPatterns(ctx context.Context, filter string, fields []stri
 }
 
 //BulkCreateIndexPattern Add Index Patterns to Kibana
-func (a *APIGen) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error {
-	panic("Should Not Be Called from Gen Pattern.")
-}
-
-//IndexPatternFields Get Fields
-func (a *APIGen) IndexPatternFields(ctx context.Context, pattern string) (*IndexPatternFields, error) {
+func (a *APIGen) BulkCreateIndexPattern(ctx context.Context, indexPatterns []IndexPattern) error {
 	panic("Should Not Be Called from Gen Pattern.")
 }

@@ -50,33 +50,17 @@ func (a *RefreshIndexPattern) Run(ctx context.Context) {
 	}()
 
 	// 2- Update Found Index Patterns
-	wg2 := sync.WaitGroup{}
 	count := atomic.Int32{}
-
 	for patterns := range idxPatternChan {
-		for _, pattern := range patterns {
-			shadowedPattern := pattern
-
-			wg2.Add(1)
-
-			err := idxPatternPool.Enqueue(ctx, func() {
-				defer wg2.Done()
-				err := a.updateIndexPattern(ctx, shadowedPattern)
-				if err != nil {
-					a.log.Warnw(fmt.Sprintf("Failed to update index pattern [%s]", shadowedPattern.Title), "error", err.Error())
-				}
-				a.log.Info(fmt.Sprintf("Updated index pattern [%s] fields", shadowedPattern.Title))
-				count.Add(1)
-			})
-
+		shadowedPatterns := patterns
+		_ = idxPatternPool.Enqueue(ctx, func() {
+			err := a.kibana.BulkCreateIndexPattern(ctx, shadowedPatterns)
 			if err != nil {
-				wg2.Done()
+				a.log.Warnw("Failed to update index patterns", "error", err.Error(), "patterns", shadowedPatterns)
 			}
-
-		}
+			count.Add(int32(len(shadowedPatterns)))
+		})
 	}
-
-	wg2.Wait()
 	idxPatternPool.Stop()
 	a.log.Info(fmt.Sprintf("Finished Updating Index Pattern(s) Fields, Updated (%d) Index Pattern.", count.Load()))
 }

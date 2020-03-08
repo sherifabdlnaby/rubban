@@ -2,7 +2,6 @@ package refreshindexpattern
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sherifabdlnaby/rubban/config"
 	"github.com/sherifabdlnaby/rubban/log"
@@ -36,25 +35,4 @@ func (a *RefreshIndexPattern) getIndexPattern(ctx context.Context, pattern strin
 		return nil, err
 	}
 	return Patterns, nil
-}
-
-func (a *RefreshIndexPattern) updateIndexPattern(ctx context.Context, indexPattern kibana.IndexPattern) error {
-
-	fields, err := a.getIndexPatternFields(ctx, indexPattern.Title)
-	if err != nil {
-		return err
-	}
-
-	indexPattern.IndexPatternFields = *fields
-
-	err = a.kibana.PutIndexPattern(ctx, indexPattern)
-	if err != nil {
-		return fmt.Errorf("failed to update Index Pattern. Index Pattern:[%s]", indexPattern.Title)
-	}
-
-	return nil
-}
-
-func (a *RefreshIndexPattern) getIndexPatternFields(ctx context.Context, indexPatternTitle string) (*kibana.IndexPatternFields, error) {
-	return a.kibana.IndexPatternFields(ctx, indexPatternTitle)
 }

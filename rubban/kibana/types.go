@@ -17,9 +17,7 @@ type API interface {
 
 	PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error
 
-	IndexPatternFields(ctx context.Context, pattern string) (*IndexPatternFields, error)
-
-	BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]IndexPattern) error
+	BulkCreateIndexPattern(ctx context.Context, indexPattern []IndexPattern) error
 }
 
 //Info for Json Unmarshalling API Response
@@ -46,11 +44,9 @@ type Index struct {
 
 //IndexPattern for Json Unmarshalling API Response
 type IndexPattern struct {
-	ID                 string
-	Version            string
-	Title              string `json:"title"`
-	TimeFieldName      string `json:"timeFieldName"`
-	IndexPatternFields `json:"fields, squash"`
+	ID            string `json:"id	,omitempty"`
+	Title         string `json:"title"`
+	TimeFieldName string `json:"timeFieldName"`
 }
 
 //IndexPattern for Json Unmarshalling API Response
@@ -62,7 +58,8 @@ type IndexPatternFields struct {
 //BulkIndexPattern for Json Unmarshalling API Response
 type BulkIndexPattern struct {
 	Type       string       `json:"type"`
-	Attributes IndexPattern `json:"Attributes,omitempty"`
+	Attributes IndexPattern `json:"attributes,omitempty"`
+	ID         string       `json:"id,omitempty"`
 }
 
 //IndexPatternPage for Json Unmarshalling API Response
@@ -74,6 +71,6 @@ type IndexPatternPage struct {
 		Type       string       `json:"type"`
 		ID         string       `json:"id"`
 		Version    string       `json:"version"`
-		Attributes IndexPattern `json:"Attributes"`
+		Attributes IndexPattern `json:"attributes"`
 	} `json:"saved_objects"`
 }

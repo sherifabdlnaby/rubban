@@ -41,7 +41,13 @@ func (a *AutoIndexPattern) Run(ctx context.Context) {
 	wg.Wait()
 	pool.Stop()
 
-	err := a.kibana.BulkCreateIndexPattern(ctx, newIndexPatterns)
+	// Create List from The Map Set we create
+	indexPatterns := make([]kibana.IndexPattern, 0)
+	for _, pattern := range newIndexPatterns {
+		indexPatterns = append(indexPatterns, pattern)
+	}
+
+	err := a.kibana.BulkCreateIndexPattern(ctx, indexPatterns)
 	if err != nil {
 		a.log.Errorw("Failed to bulk create new index patterns", "error", err.Error())
 	}

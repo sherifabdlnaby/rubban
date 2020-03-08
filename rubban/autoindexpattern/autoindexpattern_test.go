@@ -30,11 +30,7 @@ func (m *mockAPI) IndexPatterns(ctx context.Context, filter string, fields []str
 	return m.indexPatterns, nil
 }
 
-func (m *mockAPI) BulkCreateIndexPattern(ctx context.Context, indexPattern map[string]kibana.IndexPattern) error {
-	panic("implement me")
-}
-
-func (m *mockAPI) IndexPatternFields(ctx context.Context, pattern string) (*kibana.IndexPatternFields, error) {
+func (m *mockAPI) BulkCreateIndexPattern(ctx context.Context, indexPatterns []kibana.IndexPattern) error {
 	panic("implement me")
 }
 
