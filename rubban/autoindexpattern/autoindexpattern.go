@@ -37,7 +37,7 @@ func NewAutoIndexPattern(config config.AutoIndexPattern, kibana kibana.API, log 
 	generalPattern := make([]GeneralPattern, 0)
 
 	for _, pattern := range config.GeneralPatterns {
-		regex := regexp.MustCompile(utils.ReplacerForRegex(pattern.Pattern))
+		regex := regexp.MustCompile(utils.PatternToRegex(pattern.Pattern))
 		generalPattern = append(generalPattern, GeneralPattern{
 			Pattern:       replaceForPattern.Replace(pattern.Pattern),
 			regex:         *regex,
@@ -69,7 +69,7 @@ func (a *AutoIndexPattern) getIndexPattern(ctx context.Context, generalPattern G
 
 	patternsList := make([]string, 0)
 	for _, index := range indexPatterns {
-		patternsList = append(patternsList, utils.ReplacerForRegex(index.Title))
+		patternsList = append(patternsList, utils.PatternToRegex(index.Title))
 	}
 
 	// Get Indices Matching Given General Pattern

@@ -68,6 +68,7 @@ func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 	return indices, err
 }
 
+//FindIndexPatternResponse Used to Decode JSON Response for Querying Index Patterns
 type FindIndexPatternResponse struct {
 	Hits struct {
 		Hits []struct {
@@ -146,7 +147,7 @@ func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []str
 		}
 	}
 
-	regex := regexp.MustCompile(utils.ReplacerForRegex(filter))
+	regex := regexp.MustCompile(utils.PatternToRegex(filter))
 
 	for _, hit := range response.Hits.Hits {
 		if regex.MatchString(hit.Source.IndexPattern.Title) {
@@ -195,21 +196,6 @@ func (a *APIVer7) BulkCreateIndexPattern(ctx context.Context, indexPattern []Ind
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("failed to bulk create saved objects, error: %s", resp.Status)
 	}
-
-	return nil
-}
-
-type PutIndexPatternAttr struct {
-	Title  string `json:"title"`
-	Fields string `json:"fields,squash"`
-}
-
-type PutIndexPatternBody struct {
-	Attributes PutIndexPatternAttr `json:"attributes"`
-	Version    string              `json:"version"`
-}
-
-func (a *APIVer7) PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error {
 
 	return nil
 }

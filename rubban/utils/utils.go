@@ -5,7 +5,8 @@ import (
 	"strings"
 )
 
-func ReplacerForRegex(s string) string {
+//PatternToRegex Transform Index Pattern with Wildcards to a valid Regex.
+func PatternToRegex(s string) string {
 	// Escape Index Pattern name (to escape dots(.) and other regex special symbols
 	s = regexp.QuoteMeta(s)
 

@@ -14,10 +14,6 @@ type mockAPI struct {
 	indexPatterns []kibana.IndexPattern
 }
 
-func (m *mockAPI) PutIndexPattern(ctx context.Context, indexPattern kibana.IndexPattern) error {
-	panic("implement me")
-}
-
 func (m *mockAPI) Info(ctx context.Context) (kibana.Info, error) {
 	panic("implement me")
 }

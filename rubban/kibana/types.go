@@ -2,7 +2,6 @@ package kibana
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/Masterminds/semver/v3"
 )
@@ -14,8 +13,6 @@ type API interface {
 	Indices(ctx context.Context, filter string) ([]Index, error)
 
 	IndexPatterns(ctx context.Context, filter string, fields []string) ([]IndexPattern, error)
-
-	PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error
 
 	BulkCreateIndexPattern(ctx context.Context, indexPattern []IndexPattern) error
 }
@@ -44,15 +41,9 @@ type Index struct {
 
 //IndexPattern for Json Unmarshalling API Response
 type IndexPattern struct {
-	ID            string `json:"id	,omitempty"`
+	ID            string `json:"id,omitempty"`
 	Title         string `json:"title"`
 	TimeFieldName string `json:"timeFieldName"`
-}
-
-//IndexPattern for Json Unmarshalling API Response
-
-type IndexPatternFields struct {
-	Fields json.RawMessage
 }
 
 //BulkIndexPattern for Json Unmarshalling API Response

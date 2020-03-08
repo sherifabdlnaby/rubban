@@ -93,6 +93,7 @@ func (c *Client) Post(ctx context.Context, path string, body io.Reader) (*http.R
 	return c.http.Do(req)
 }
 
+//Put Perform a PUT Request to Kibana
 func (c *Client) Put(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
 	req, err := c.newRequest(ctx, "PUT", path, body)
 	if err != nil {

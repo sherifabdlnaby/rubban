@@ -15,10 +15,6 @@ type APIGen struct {
 	log    log.Logger
 }
 
-func (a *APIGen) PutIndexPattern(ctx context.Context, indexPattern IndexPattern) error {
-	panic("implement me")
-}
-
 //NewAPIGen Constructor
 func NewAPIGen(config config.Kibana, log log.Logger) (*APIGen, error) {
 	client, err := NewKibanaClient(config, log.Extend("Client"))
