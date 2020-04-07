@@ -7,5 +7,6 @@ services:
             RUBBAN_KIBANA_HOST: "kibana:5601"
             RUBBAN_KIBANA_USER: "elastic"
             RUBBAN_KIBANA_PASSWORD: "changeme"
+            RUBBAN_AUTOINDEXPATTERN_ENABLED: 'true'
             RUBBAN_AUTOINDEXPATTERN_SCHEDULE: '*/5 * * * *'
             RUBBAN_AUTOINDEXPATTERN_GENERALPATTERNS: '[{"pattern":"logs-apache-access-*-?","timeFieldName":"@timestamp"}]'

@@ -73,17 +73,18 @@ With Rubban *you can configure a _general_ pattern* like `logs-apache-access-?-*
 
 ## Docker
 
-#### Docker
+#### via Docker CLI
 ```
 docker run  --env='RUBBAN_KIBANA_HOST=https://kibana:5601' \
             --env='RUBBAN_KIBANA_USER=elastic' \
             --env='RUBBAN_KIBANA_PASSWORD=changeme' \
+            --env='RUBBAN_AUTOINDEXPATTERN_ENABLED=true' \
             --env='RUBBAN_AUTOINDEXPATTERN_SCHEDULE=*/5 * * * *' \
             --env='RUBBAN_AUTOINDEXPATTERN_GENERALPATTERNS=[{"pattern":"logs-apache-access-*-?","timeFieldName":"@timestamp"}]' \
              sherifabdlnaby/rubban:latest
  ```
 
-##### Docker Compose
+##### via Docker Compose
 
  `docker-compose up -d`
 

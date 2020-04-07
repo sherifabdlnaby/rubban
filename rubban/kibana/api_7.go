@@ -83,8 +83,6 @@ type FindIndexPatternResponse struct {
 	} `json:"hits"`
 }
 
-var alphaNumericRegex = regexp.MustCompile("[^a-zA-Z0-9]+")
-var space = regexp.MustCompile(`\s+`)
 var idxPatternID = regexp.MustCompile(`(index-pattern:)(.*)`)
 
 //IndexPatterns Get IndexPatterns from kibana matching the supplied filter (support wildcards)
@@ -97,9 +95,6 @@ func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []str
 	// so it's okay to do these extra steps and won't add much overhead.
 
 	var IndexPatterns = make([]IndexPattern, 0)
-
-	// Remove Non Alpha Numeric Chars AND Trim Duplicate Whitespaces.
-	indexPatternTrimd := space.ReplaceAllString(alphaNumericRegex.ReplaceAllString(filter, " "), " ")
 
 	requestBody := fmt.Sprintf(`{
 	  "_source": ["index-pattern.title","index-pattern.timeFieldName"],
@@ -131,7 +126,7 @@ func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []str
 		  "must_not": []
 		}
 	  }
-	}`, indexPatternTrimd)
+	}`, filter)
 
 	resp, err := a.client.Post(ctx, "/api/console/proxy?path=.kibana/_search&method=POST", strings.NewReader(requestBody))
 	if err != nil {
