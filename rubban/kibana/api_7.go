@@ -54,7 +54,7 @@ func (a *APIVer7) Info(ctx context.Context) (Info, error) {
 //Indices Get Indices match supported filter (support wildcards)
 func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 	indices := make([]Index, 0)
-	resp, err := a.client.Post(ctx, fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter), nil)
+	resp, err := a.client.Post(ctx, fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&method=GET", filter), nil)
 	if err != nil {
 		return indices, err
 	}
