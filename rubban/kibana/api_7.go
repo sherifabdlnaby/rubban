@@ -65,6 +65,7 @@ func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 			return nil, err
 		}
 	}
+	a.log.Debug(indices)
 	return indices, err
 }
 
