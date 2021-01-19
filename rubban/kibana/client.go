@@ -90,7 +90,7 @@ func (c *Client) Post(ctx context.Context, path string, body io.Reader) (*http.R
 	if err != nil {
 		return nil, err
 	}
-	log.Default().Debug(req.RequestURI)
+	fmt.Print(req.RequestURI)
 	return c.http.Do(req)
 }
 
