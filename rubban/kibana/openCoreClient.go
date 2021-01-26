@@ -17,24 +17,18 @@ import (
 	"github.com/sherifabdlnaby/rubban/version"
 )
 
-//ClientVer7 is a HTTP API Request wrapper.
-type ClientVer7 struct {
+//OCClient is a HTTP API Request wrapper.
+type OCClient struct {
 	baseURL  *url.URL
 	username string
 	password string
 	http     *http.Client
+	ver      semver.Version
 	logger   log.Logger
 }
 
-type Client interface {
-	Get(ctx context.Context, path string, body io.Reader) (*http.Response, error)
-	Post(ctx context.Context, path string, body io.Reader) (*http.Response, error)
-	Put(ctx context.Context, path string, body io.Reader) (*http.Response, error)
-	Validate(ctx context.Context, retry int, waitTime time.Duration) error
-}
-
-//NewKibanaClientVer7 Constructor
-func NewKibanaClientVer7(config config.Kibana, logger log.Logger) (*ClientVer7, error) {
+//NewKibanaOCClient Constructor
+func NewKibanaOCClient(config config.Kibana, ver semver.Version, logger log.Logger) (*OCClient, error) {
 	//// Add Scheme if doesn't exist (default to HTTP)
 	rawURL := config.Host
 	if !strings.HasPrefix(rawURL, "http://") && !strings.HasPrefix(rawURL, "https://") {
@@ -47,10 +41,11 @@ func NewKibanaClientVer7(config config.Kibana, logger log.Logger) (*ClientVer7, 
 		return nil, err
 	}
 
-	return &ClientVer7{
+	return &OCClient{
 		baseURL:  baseURL,
 		username: config.User,
 		password: config.Password,
+		ver:      ver,
 		http: &http.Client{
 			/* #nosec */
 			Transport: &http.Transport{TLSClientConfig: &tls.Config{InsecureSkipVerify: true}},
@@ -60,12 +55,42 @@ func NewKibanaClientVer7(config config.Kibana, logger log.Logger) (*ClientVer7, 
 	}, nil
 }
 
-func (c *ClientVer7) getURLFromPath(path string) string {
+func (c *OCClient) getURLFromPath(path string) string {
 	return c.baseURL.String() + path
 }
 
-func (c *ClientVer7) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
+func (c *OCClient) getAuthCookie() (*http.Cookie, error) {
+
+	payload := strings.NewReader(fmt.Sprintf(`{"username":"%s","password":"%s"}`, c.username, c.password))
+
+	client := &http.Client{}
+
+	req, err := http.NewRequest("POST", c.getURLFromPath("/auth/login"), payload)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("kbn-version", c.ver.String())
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if !(res.StatusCode >= 200 && res.StatusCode < 300) {
+		return nil, fmt.Errorf("could not get auth cookie, status code: %d", res.StatusCode)
+	}
+
+	return res.Cookies()[0], nil
+}
+
+func (c *OCClient) newRequest(ctx context.Context, method string, path string, body io.Reader) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, method, c.getURLFromPath(path), body)
+	if err != nil {
+		return nil, err
+	}
+
+	// Get Token //TODO cache result
+	auhtCookie, err := c.getAuthCookie()
 	if err != nil {
 		return nil, err
 	}
@@ -74,16 +99,15 @@ func (c *ClientVer7) newRequest(ctx context.Context, method string, path string,
 	req.Header.Set("Content-Type", "application/json")
 	//req.Header.Set("Accept", "application/json")
 	req.Header.Set("kbn-xsrf", "true")
+	req.Header.Set("kbn-xsrf", "true")
 	req.Header.Set("User-Agent", "Rubban/"+version.Version)
-
-	// Set Auth
-	req.SetBasicAuth(c.username, c.password)
+	req.AddCookie(auhtCookie)
 
 	return req, nil
 }
 
 //Get Perform a GET Request to Kibana
-func (c *ClientVer7) Get(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+func (c *OCClient) Get(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
 	req, err := c.newRequest(ctx, "GET", path, body)
 	if err != nil {
 		return nil, err
@@ -92,17 +116,16 @@ func (c *ClientVer7) Get(ctx context.Context, path string, body io.Reader) (*htt
 }
 
 //Post Perform a POST Request to Kibana
-func (c *ClientVer7) Post(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+func (c *OCClient) Post(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
 	req, err := c.newRequest(ctx, "POST", path, body)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Print(req.RequestURI)
 	return c.http.Do(req)
 }
 
 //Put Perform a PUT Request to Kibana
-func (c *ClientVer7) Put(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
+func (c *OCClient) Put(ctx context.Context, path string, body io.Reader) (*http.Response, error) {
 	req, err := c.newRequest(ctx, "PUT", path, body)
 	if err != nil {
 		return nil, err
@@ -111,7 +134,7 @@ func (c *ClientVer7) Put(ctx context.Context, path string, body io.Reader) (*htt
 }
 
 //Validate Validate connection to Kibana by pinging /status api.
-func (c *ClientVer7) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
+func (c *OCClient) Validate(ctx context.Context, retry int, waitTime time.Duration) error {
 	var err error
 	var resp *http.Response
 	var pingPath = "/api/status"
@@ -145,7 +168,7 @@ func (c *ClientVer7) Validate(ctx context.Context, retry int, waitTime time.Dura
 }
 
 //GuessVersion Get Kibana Version (Will use different methods to determine API version)
-func (c *ClientVer7) GuessVersion(ctx context.Context) (semver.Version, error) {
+func (c *OCClient) GuessVersion(ctx context.Context) (semver.Version, error) {
 
 	// 1
 	resp, err := c.Get(ctx, "/api/status", nil)

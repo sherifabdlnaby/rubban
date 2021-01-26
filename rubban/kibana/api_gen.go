@@ -11,13 +11,13 @@ import (
 
 //APIGen Implements API Calls compatible with Kibana 7^
 type APIGen struct {
-	client *Client
+	client *ClientVer7
 	log    log.Logger
 }
 
 //NewAPIGen Constructor
 func NewAPIGen(config config.Kibana, log log.Logger) (*APIGen, error) {
-	client, err := NewKibanaClient(config, log.Extend("Client"))
+	client, err := NewKibanaClientVer7(config, log.Extend("ClientVer7"))
 	if err != nil {
 		return &APIGen{}, err
 	}

@@ -5,6 +5,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/semver/v3"
+	"net/url"
 	"regexp"
 	"strings"
 
@@ -15,13 +17,22 @@ import (
 
 //APIVer7 Implements API Calls compatible with Kibana 7^
 type APIVer7 struct {
-	client *Client
+	client Client
 	log    log.Logger
+	ver    semver.Version
 }
 
 //NewAPIVer7 Constructor
-func NewAPIVer7(config config.Kibana, log log.Logger) (*APIVer7, error) {
-	client, err := NewKibanaClient(config, log.Extend("Client"))
+func NewAPIVer7(config config.Kibana, ver semver.Version, log log.Logger) (*APIVer7, error) {
+	var client Client
+	var err error
+
+	if config.Aws {
+		client, err = NewKibanaOCClient(config, ver, log.Extend("ClientVer7"))
+	} else {
+		client, err = NewKibanaClientVer7(config, log.Extend("ClientVer7"))
+	}
+
 	if err != nil {
 		return &APIVer7{}, err
 	}
@@ -54,7 +65,7 @@ func (a *APIVer7) Info(ctx context.Context) (Info, error) {
 //Indices Get Indices match supported filter (support wildcards)
 func (a *APIVer7) Indices(ctx context.Context, filter string) ([]Index, error) {
 	indices := make([]Index, 0)
-	resp, err := a.client.Post(ctx, fmt.Sprintf("/api/console/proxy?path=_cat/indices/%s?format=json&h=index&method=GET", filter), nil)
+	resp, err := a.client.Post(ctx, "/api/console/proxy?path="+url.QueryEscape(fmt.Sprintf("_cat/indices/%s?format=json&h=index", filter))+"&method=GET", nil)
 	if err != nil {
 		return indices, err
 	}
@@ -90,7 +101,7 @@ var idxPatternID = regexp.MustCompile(`(index-pattern:)(.*)`)
 func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []string) ([]IndexPattern, error) {
 
 	// As Index Pattern Names in Kibana Index is of type text. It CANNOT be queried with wildcards (ex logs-*-xyz-*),
-	// because It's analyzed and tokenized, so it can be looked up using exact phrase (that remove punc like * - . etc)
+	// because It's analyzed and tokenized, so i	t can be looked up using exact phrase (that remove punc like * - . etc)
 	// which is not ideal, here we do a query that will get all results + some false positives, then w reiterate to
 	// eliminate these false positives. It's okay to do that since number of Index patters can rarely be 1000+ per pattern.
 	// so it's okay to do these extra steps and won't add much overhead.
@@ -104,17 +115,6 @@ func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []str
 			"bool": {
 		  "must": [
 			{
-			  "query_string" : {
-				"query" : "%s",
-				"auto_generate_synonyms_phrase_query": true,
-				"analyze_wildcard": true,
-				"default_operator": "AND"
-				, "fields": ["index-pattern.title"]
-				, "fuzziness": 0.0
-				, "phrase_slop": 0
-			}
-			},
-			{
 			  "match_phrase": {
 				"type": {
 				  "query": "index-pattern"
@@ -127,9 +127,10 @@ func (a *APIVer7) IndexPatterns(ctx context.Context, filter string, fields []str
 		  "must_not": []
 		}
 	  }
-	}`, filter)
+	}`)
+	//TODO Cache result as much as possible
 
-	resp, err := a.client.Post(ctx, "/api/console/proxy?path=.kibana/_search&method=POST", strings.NewReader(requestBody))
+	resp, err := a.client.Post(ctx, "/api/console/proxy?path="+url.QueryEscape(".kibana/_search")+"&method=POST", strings.NewReader(requestBody))
 	if err != nil {
 		return IndexPatterns, err
 	}

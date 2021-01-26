@@ -13,6 +13,7 @@ type Kibana struct {
 	Host     string `validate:"required,uri"`
 	User     string `validate:"required_with=password"`
 	Password string `validate:"required_with=User"`
+	Aws      bool
 }
 
 //GeneralPattern for Config Unmarshalling
@@ -52,6 +53,7 @@ func Default() *Config {
 			Host:     "localhost:5601",
 			User:     "elastic",
 			Password: "changeme",
+			Aws:      false,
 		},
 		Logging: Logging{
 			Level:  "info",

@@ -157,7 +157,7 @@ func (r *Rubban) initKibanaClient(ctx context.Context) error {
 	// Determine API
 	ver7, _ := semver.NewVersion("7.0.0")
 	if r.semVer.GreaterThan(ver7) || r.semVer.Equal(ver7) {
-		r.api, err = kibana.NewAPIVer7(r.config.Kibana, r.logger)
+		r.api, err = kibana.NewAPIVer7(r.config.Kibana, r.semVer, r.logger)
 		if err != nil {
 			r.logger.Fatalw("Could not Initialize Kibana API client", "error", err.Error())
 			return errFailedToInitialize
